@@ -1,30 +1,14 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router';
-import { 
-  getActivityDetail, 
-  deleteActivity,
-  getActivityRecommendation,
-  updateActivity 
-} from '../services/api';
-import { 
-  ArrowLeft, 
-  Calendar, 
-  Clock, 
-  Flame, 
-  TrendingUp, 
-  AlertCircle, 
-  Lightbulb, 
-  ShieldCheck, 
-  RefreshCw 
-} from 'lucide-react';
+import { getActivityDetail, deleteActivity, getActivityRecommendation, updateActivity } from '../services/api';
+import { ArrowLeft, Calendar, Clock, Flame, TrendingUp, AlertCircle, Lightbulb, ShieldCheck, Droplet } from 'lucide-react';
 
 const ActivityDetail = () => {
+
   const { id } = useParams();
   const navigate = useNavigate();
-
   const [activity, setActivity] = useState(null);
   const [recommendation, setRecommendation] = useState(null);
-
   const [loadingActivity, setLoadingActivity] = useState(true);
   const [loadingRecommendation, setLoadingRecommendation] = useState(true);
   const [recError, setRecError] = useState(null);
@@ -33,30 +17,27 @@ const ActivityDetail = () => {
   const [editData, setEditData] = useState({
     type: '',
     duration: '',
-    caloriesBurned: ''
+    caloriesBurned: '',
+    timeOfDay: '',
+    mealTiming: '',
+    waterIntakeMl: ''
   });
 
-  // 👇 helper to load recommendation (used on first load + after update + refresh button)
-  const loadRecommendation = async (showFriendlyMessage = true) => {
-    try {
-      setLoadingRecommendation(true);
-      setRecError(null);
-      const response = await getActivityRecommendation(id);
-      setRecommendation(response.data);
-    } catch (error) {
-      if (error.response && error.response.status === 404) {
-        // AI not generated yet
-        if (showFriendlyMessage) {
-          setRecError('AI recommendation is still being generated for this activity. Please check again in a few seconds.');
-        }
-        setRecommendation(null);
-      } else {
-        console.error('Error fetching recommendation:', error);
-        setRecError('Failed to load AI recommendation.');
-        setRecommendation(null);
-      }
-    } finally {
-      setLoadingRecommendation(false);
+  const formatTimeOfDay = (value) => {
+    switch (value) {
+      case 'MORNING': return 'Morning';
+      case 'AFTERNOON': return 'Afternoon';
+      case 'EVENING': return 'Evening';
+      case 'NIGHT': return 'Night';
+      default: return value || 'Not specified';
+    }
+  };
+
+  const formatMealTiming = (value) => {
+    switch (value) {
+      case 'BEFORE_LUNCH': return 'Before lunch';
+      case 'AFTER_LUNCH': return 'After lunch';
+      default: return value || 'Not specified';
     }
   };
 
@@ -66,23 +47,49 @@ const ActivityDetail = () => {
         setLoadingActivity(true);
         const response = await getActivityDetail(id); // /activities/{id}
         setActivity(response.data);
-
-        // prefill edit form from activity data
-        setEditData({
-          type: response.data.type || '',
-          duration: response.data.duration ?? '',
-          caloriesBurned: response.data.caloriesBurned ?? ''
-        });
       } catch (error) {
-        console.error('Error fetching activity:', error);
+        console.error(error);
       } finally {
         setLoadingActivity(false);
+      }
+    }
+
+    const fetchRecommendation = async () => {
+      try {
+        setLoadingRecommendation(true);
+        const response = await getActivityRecommendation(id); // /recommendations/activity/{id}
+        setRecommendation(response.data);
+        setRecError(null);
+      } catch (error) {
+        if (error.response && error.response.status === 404) {
+          setRecError('No AI recommendation generated yet for this activity.');
+        } else {
+          console.error('Error fetching recommendation:', error);
+          setRecError('Failed to load AI recommendation.');
+        }
+      } finally {
+        setLoadingRecommendation(false);
       }
     };
 
     fetchActivityDetail();
-    loadRecommendation(true);
+    fetchRecommendation();
   }, [id]);
+
+  // When activity is loaded, prefill edit form
+  useEffect(() => {
+    if (activity) {
+      const metrics = activity.additionalMetrics || {};
+      setEditData({
+        type: activity.type || '',
+        duration: activity.duration ?? '',
+        caloriesBurned: activity.caloriesBurned ?? '',
+        timeOfDay: metrics.timeOfDay || '',
+        mealTiming: metrics.mealTiming || '',
+        waterIntakeMl: metrics.waterIntakeMl ?? ''
+      });
+    }
+  }, [activity]);
 
   const handleDelete = async () => {
     if (!window.confirm("Are you sure you want to delete this activity?")) return;
@@ -109,28 +116,42 @@ const ActivityDetail = () => {
     e.preventDefault();
 
     try {
-      await updateActivity(id, {
+      const updatedPayload = {
         type: editData.type,
         duration: Number(editData.duration),
         caloriesBurned: Number(editData.caloriesBurned),
         startTime: activity.startTime,
-        additionalMetrics: activity.additionalMetrics
-      });
+        additionalMetrics: {
+          ...(activity.additionalMetrics || {}),
+          timeOfDay: editData.timeOfDay,
+          mealTiming: editData.mealTiming,
+          waterIntakeMl: editData.waterIntakeMl
+            ? Number(editData.waterIntakeMl)
+            : null
+        }
+      };
+
+      await updateActivity(id, updatedPayload);
 
       alert("Activity updated successfully. AI may regenerate the recommendation.");
 
-      // update local state so UI reflects changes immediately
+      // Update local state so UI reflects changes
       setActivity(prev => ({
         ...prev,
         type: editData.type,
         duration: Number(editData.duration),
-        caloriesBurned: Number(editData.caloriesBurned)
+        caloriesBurned: Number(editData.caloriesBurned),
+        additionalMetrics: {
+          ...(prev.additionalMetrics || {}),
+          timeOfDay: editData.timeOfDay,
+          mealTiming: editData.mealTiming,
+          waterIntakeMl: editData.waterIntakeMl
+            ? Number(editData.waterIntakeMl)
+            : null
+        }
       }));
 
       setIsEditing(false);
-
-      // 🔄 Try to reload recommendation after update (no big error message if still 404)
-      loadRecommendation(false);
     } catch (error) {
       if (error.response) {
         console.error(
@@ -145,8 +166,8 @@ const ActivityDetail = () => {
     }
   };
 
-  const handleRefreshRecommendation = () => {
-    loadRecommendation(true);
+  const handleEditFieldChange = (field, value) => {
+    setEditData(prev => ({ ...prev, [field]: value }));
   };
 
   if (loadingActivity || !activity) {
@@ -159,6 +180,8 @@ const ActivityDetail = () => {
       </div>
     );
   }
+
+  const metrics = activity.additionalMetrics || {};
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6">
@@ -226,9 +249,44 @@ const ActivityDetail = () => {
                 : 'N/A'}
             </p>
           </div>
+
+          {/* Time of Day */}
+          <div className="bg-gray-700/50 rounded-lg p-5 border border-gray-600">
+            <div className="flex items-center gap-3 mb-2">
+              <Clock className="text-blue-300" size={20} />
+              <p className="text-gray-400 text-sm font-medium">Time of Day</p>
+            </div>
+            <p className="text-xl font-semibold text-white">
+              {formatTimeOfDay(metrics.timeOfDay)}
+            </p>
+          </div>
+
+          {/* Meal Timing */}
+          <div className="bg-gray-700/50 rounded-lg p-5 border border-gray-600">
+            <div className="flex items-center gap-3 mb-2">
+              <Flame className="text-pink-300" size={20} />
+              <p className="text-gray-400 text-sm font-medium">Around Lunch</p>
+            </div>
+            <p className="text-xl font-semibold text-white">
+              {formatMealTiming(metrics.mealTiming)}
+            </p>
+          </div>
+
+          {/* Water Intake */}
+          <div className="bg-gray-700/50 rounded-lg p-5 border border-gray-600">
+            <div className="flex items-center gap-3 mb-2">
+              <Droplet className="text-cyan-300" size={20} />
+              <p className="text-gray-400 text-sm font-medium">Water Intake</p>
+            </div>
+            <p className="text-xl font-semibold text-white">
+              {metrics.waterIntakeMl != null && metrics.waterIntakeMl !== ''
+                ? `${metrics.waterIntakeMl} ml`
+                : 'Not specified'}
+            </p>
+          </div>
         </div>
 
-        <div className="mt-6 flex gap-3 flex-wrap">
+        <div className="mt-6 flex gap-3">
           <button
             onClick={() => setIsEditing(true)}
             className="bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-3 rounded-lg font-medium transition"
@@ -254,9 +312,7 @@ const ActivityDetail = () => {
                 <label className="block text-gray-300 mb-1">Activity Type</label>
                 <select
                   value={editData.type}
-                  onChange={(e) =>
-                    setEditData(prev => ({ ...prev, type: e.target.value }))
-                  }
+                  onChange={(e) => handleEditFieldChange('type', e.target.value)}
                   className="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600"
                 >
                   <option value="RUNNING">Running</option>
@@ -278,9 +334,7 @@ const ActivityDetail = () => {
                 <input
                   type="number"
                   value={editData.duration}
-                  onChange={(e) =>
-                    setEditData(prev => ({ ...prev, duration: e.target.value }))
-                  }
+                  onChange={(e) => handleEditFieldChange('duration', e.target.value)}
                   className="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600"
                 />
               </div>
@@ -291,9 +345,49 @@ const ActivityDetail = () => {
                 <input
                   type="number"
                   value={editData.caloriesBurned}
-                  onChange={(e) =>
-                    setEditData(prev => ({ ...prev, caloriesBurned: e.target.value }))
-                  }
+                  onChange={(e) => handleEditFieldChange('caloriesBurned', e.target.value)}
+                  className="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600"
+                />
+              </div>
+
+              {/* Time of Day */}
+              <div>
+                <label className="block text-gray-300 mb-1">Time of Day</label>
+                <select
+                  value={editData.timeOfDay}
+                  onChange={(e) => handleEditFieldChange('timeOfDay', e.target.value)}
+                  className="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600"
+                >
+                  <option value="">Select time of day</option>
+                  <option value="MORNING">Morning</option>
+                  <option value="AFTERNOON">Afternoon</option>
+                  <option value="EVENING">Evening</option>
+                  <option value="NIGHT">Night</option>
+                </select>
+              </div>
+
+              {/* Meal Timing */}
+              <div>
+                <label className="block text-gray-300 mb-1">Before/After Lunch</label>
+                <select
+                  value={editData.mealTiming}
+                  onChange={(e) => handleEditFieldChange('mealTiming', e.target.value)}
+                  className="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600"
+                >
+                  <option value="">Select option</option>
+                  <option value="BEFORE_LUNCH">Before lunch</option>
+                  <option value="AFTER_LUNCH">After lunch</option>
+                </select>
+              </div>
+
+              {/* Water Intake */}
+              <div>
+                <label className="block text-gray-300 mb-1">Water Intake (ml)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={editData.waterIntakeMl}
+                  onChange={(e) => handleEditFieldChange('waterIntakeMl', e.target.value)}
                   className="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600"
                 />
               </div>
@@ -318,28 +412,14 @@ const ActivityDetail = () => {
         )}
       </div>
 
-      {/* AI Recommendation Card */}
+      {/* AI Recommendation Card (unchanged logic, but now uses new metrics in backend prompt) */}
       <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl border border-gray-700 p-8 shadow-2xl">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-3xl font-bold text-white flex items-center gap-3">
-            <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center">
-              <Lightbulb className="text-purple-400" size={24} />
-            </div>
-            AI Recommendation
-          </h2>
-
-          <button
-            onClick={handleRefreshRecommendation}
-            disabled={loadingRecommendation}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition
-              ${loadingRecommendation 
-                ? 'bg-gray-700 text-gray-400 cursor-not-allowed' 
-                : 'bg-blue-600 hover:bg-blue-700 text-white'}`}
-          >
-            <RefreshCw size={16} className={loadingRecommendation ? 'animate-spin' : ''} />
-            {loadingRecommendation ? 'Refreshing...' : 'Refresh'}
-          </button>
-        </div>
+        <h2 className="text-3xl font-bold text-white mb-6 flex items-center gap-3">
+          <div className="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center">
+            <Lightbulb className="text-purple-400" size={24} />
+          </div>
+          AI Recommendation
+        </h2>
 
         {loadingRecommendation && (
           <p className="text-gray-400">Loading recommendation...</p>
@@ -434,6 +514,6 @@ const ActivityDetail = () => {
       </div>
     </div>
   );
-};
+}
 
 export default ActivityDetail;
