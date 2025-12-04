@@ -5,20 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="cf92d4f1-ac47-4e04-8535-49288bd8ea87" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/fitness-microservices.iml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/activityservice/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/activityservice/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/activityservice/src/main/java/com/fitness/activityservice/controller/ActivityController.java" beforeDir="false" afterPath="$PROJECT_DIR$/activityservice/src/main/java/com/fitness/activityservice/controller/ActivityController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/activityservice/src/main/java/com/fitness/activityservice/model/Activity.java" beforeDir="false" afterPath="$PROJECT_DIR$/activityservice/src/main/java/com/fitness/activityservice/model/Activity.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/activityservice/src/main/java/com/fitness/activityservice/service/ActivityService.java" beforeDir="false" afterPath="$PROJECT_DIR$/activityservice/src/main/java/com/fitness/activityservice/service/ActivityService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/configserver/src/main/resources/config/activity-service.yml" beforeDir="false" afterPath="$PROJECT_DIR$/configserver/src/main/resources/config/activity-service.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/userservice/src/main/java/com/fitness/userservice/UserRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/userservice/src/main/java/com/fitness/userservice/UserRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/userservice/src/main/java/com/fitness/userservice/dto/RegisterRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/userservice/src/main/java/com/fitness/userservice/dto/RegisterRequest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/userservice/src/main/java/com/fitness/userservice/dto/UserResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/userservice/src/main/java/com/fitness/userservice/dto/UserResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/userservice/src/main/java/com/fitness/userservice/models/User.java" beforeDir="false" afterPath="$PROJECT_DIR$/userservice/src/main/java/com/fitness/userservice/models/User.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/userservice/src/main/java/com/fitness/userservice/services/UserService.java" beforeDir="false" afterPath="$PROJECT_DIR$/userservice/src/main/java/com/fitness/userservice/services/UserService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/configserver/src/main/resources/config/ai-service.yml" beforeDir="false" afterPath="$PROJECT_DIR$/configserver/src/main/resources/config/ai-service.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/configserver/src/main/resources/config/gateway-service.yml" beforeDir="false" afterPath="$PROJECT_DIR$/configserver/src/main/resources/config/gateway-service.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/configserver/src/main/resources/config/user-service.yml" beforeDir="false" afterPath="$PROJECT_DIR$/configserver/src/main/resources/config/user-service.yml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -28,52 +20,52 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="KubernetesApiPersistence"><![CDATA[{}]]></component>
-  <component name="KubernetesApiProvider"><![CDATA[{
-  "isMigrated": true
-}]]></component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 4
-}]]></component>
+  <component name="KubernetesApiPersistence">{}</component>
+  <component name="KubernetesApiProvider">{
+  &quot;isMigrated&quot;: true
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 4
+}</component>
   <component name="ProjectId" id="35xASxqnMts8YjEIwzH8P22Kfxt" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RequestMappingsPanelOrder0": "0",
-    "RequestMappingsPanelOrder1": "1",
-    "RequestMappingsPanelWidth0": "75",
-    "RequestMappingsPanelWidth1": "75",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "Spring Boot.ActivityserviceApplication.executor": "Run",
-    "Spring Boot.AiserviceApplication.executor": "Run",
-    "Spring Boot.ConfigserverApplication.executor": "Run",
-    "Spring Boot.EurekaApplication.executor": "Run",
-    "Spring Boot.GatewayApplication.executor": "Run",
-    "Spring Boot.UserserviceApplication.executor": "Run",
-    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "main",
-    "junie.onboarding.icon.badge.shown": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/manid/Documents/Work/LEWIS/2025/Lewis Fall-2 2025/Computer Science Masters Project/Alzobi/FitLife_Connect",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "Project",
-    "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.0",
-    "run.configurations.included.in.services": "true",
-    "to.speed.mode.migration.done": "true",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
+    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
+    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
+    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;Spring Boot.ActivityserviceApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.AiserviceApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.ConfigserverApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.EurekaApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.GatewayApplication.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.UserserviceApplication.executor&quot;: &quot;Run&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/manid/Documents/Work/LEWIS/2025/Lewis Fall-2 2025/Computer Science Masters Project/Alzobi/FitLife_Connect&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
+    &quot;run.configurations.included.in.services&quot;: &quot;true&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RunDashboard">
     <option name="configurationTypes">
       <set>
@@ -100,7 +92,7 @@
       </map>
     </option>
   </component>
-  <component name="RunManager" selected="Spring Boot.GatewayApplication">
+  <component name="RunManager" selected="Spring Boot.ConfigserverApplication">
     <configuration name="ActivityserviceApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
       <module name="activityservice" />
       <option name="SPRING_BOOT_MAIN_CLASS" value="com.fitness.activityservice.ActivityserviceApplication" />
@@ -170,8 +162,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.26830.84" />
-        <option value="bundled-js-predefined-d6986cc7102b-3aa1da707db6-JavaScript-IU-252.26830.84" />
+        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.28238.7" />
+        <option value="bundled-js-predefined-d6986cc7102b-a71380e98a7c-JavaScript-IU-252.28238.7" />
       </set>
     </attachedChunks>
   </component>
@@ -183,10 +175,24 @@
       <option name="presentableId" value="Default" />
       <updated>1764041353704</updated>
       <workItem from="1764041356504" duration="6888000" />
+      <workItem from="1764699332458" duration="2393000" />
+      <workItem from="1764712083905" duration="1845000" />
+      <workItem from="1764823126069" duration="1529000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/configserver/src/main/java/com/fitness/configserver/ConfigserverApplication.java</url>
+          <line>8</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

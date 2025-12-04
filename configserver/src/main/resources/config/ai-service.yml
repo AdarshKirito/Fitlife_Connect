@@ -16,8 +16,8 @@ spring:
 
 gemini:
   api:
-    url: ${GEMINI_URL}
-    key: ${GEMINI_KEY}
+    url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
+    key: AIzaSyBou9lQaJ7oE8Q82zWgeaPHnXw2ZFPCXkI
 
 kafka:
   topic:
@@ -28,6 +28,11 @@ eureka:
   client:
     serviceUrl:
       defaultZone: http://localhost:8761/eureka/
+  instance:
+    hostname: localhost
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+
 
 server:
   port: 8083
