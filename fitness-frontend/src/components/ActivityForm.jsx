@@ -7,10 +7,14 @@ const ActivityForm = ({ onActivityAdded }) => {
     type: "RUNNING",
     duration: '',
     caloriesBurned: '',
+    // startTime stored as a string matching input[type=datetime-local] value
+    startTime: null,
     additionalMetrics: {
       timeOfDay: '',
       mealTiming: '',
-      waterIntakeMl: ''
+      waterIntakeMl: '',
+      heartRateBpm: '',
+      distance: ''
     }
   });
 
@@ -40,12 +44,20 @@ const ActivityForm = ({ onActivityAdded }) => {
     try {
       const payload = {
         ...activity,
+        // convert numbers and pass startTime as-is (datetime-local string -> ISO-ish local string)
         duration: Number(activity.duration),
         caloriesBurned: Number(activity.caloriesBurned),
+        startTime: activity.startTime || null,
         additionalMetrics: {
           ...activity.additionalMetrics,
           waterIntakeMl: activity.additionalMetrics.waterIntakeMl
             ? Number(activity.additionalMetrics.waterIntakeMl)
+            : null,
+          heartRateBpm: activity.additionalMetrics.heartRateBpm
+            ? Number(activity.additionalMetrics.heartRateBpm)
+            : null,
+          distance: activity.additionalMetrics.distance
+            ? Number(activity.additionalMetrics.distance)
             : null
         }
       };
@@ -56,10 +68,13 @@ const ActivityForm = ({ onActivityAdded }) => {
         type: "RUNNING",
         duration: '',
         caloriesBurned: '',
+        startTime: getLocalDatetimeForInput(),
         additionalMetrics: {
           timeOfDay: '',
           mealTiming: '',
-          waterIntakeMl: ''
+          waterIntakeMl: '',
+          heartRateBpm: '',
+          distance: ''
         }
       });
       setErrors({
@@ -91,6 +106,34 @@ const ActivityForm = ({ onActivityAdded }) => {
       setErrors({...errors, duration: 'Duration cannot exceed 24 hours (1440 minutes)'});
     } else {
       setErrors({...errors, duration: ''});
+    }
+  }
+
+  // helper to produce a value suitable for input[type=datetime-local] representing local now
+  const getLocalDatetimeForInput = () => {
+    const now = new Date();
+    // offset to account for local timezone so the displayed value matches local time
+    const tzOffset = now.getTimezoneOffset();
+    const local = new Date(now.getTime() - tzOffset * 60000);
+    return local.toISOString().slice(0,16); // YYYY-MM-DDTHH:mm
+  }
+
+  // set initial startTime to now on first render if not set
+  React.useEffect(() => {
+    if (!activity.startTime) {
+      setActivity(prev => ({...prev, startTime: getLocalDatetimeForInput()}));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleStartTimeChange = (e) => {
+    const value = e.target.value;
+    // prevent selecting future times by clamping to now
+    const max = getLocalDatetimeForInput();
+    if (value > max) {
+      setActivity(prev => ({...prev, startTime: max}));
+    } else {
+      setActivity(prev => ({...prev, startTime: value}));
     }
   }
 
@@ -181,6 +224,24 @@ const ActivityForm = ({ onActivityAdded }) => {
         )}
       </div>
 
+      {/* Date & Time */}
+      <div className="mb-4">
+        <label className="block text-white text-sm font-medium mb-2">
+          Date & Time (when activity started) <span className="text-red-400">*</span>
+        </label>
+        <input
+          type="datetime-local"
+          value={activity.startTime || ''}
+          onChange={handleStartTimeChange}
+          className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition"
+          max={getLocalDatetimeForInput()}
+          required
+        />
+        <p className="text-gray-400 text-sm mt-1">
+          You can select past date/time; future times are not allowed.
+        </p>
+      </div>
+
       {/* Additional Metrics Section */}
       <div className="mb-6 border border-gray-700 rounded-lg p-4 bg-gray-900/40">
         <p className="text-white font-medium mb-3">
@@ -233,6 +294,38 @@ const ActivityForm = ({ onActivityAdded }) => {
             onChange={(e) => handleAdditionalMetricChange('waterIntakeMl', e.target.value)}
             className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-sm"
             placeholder="e.g., 250, 500"
+          />
+        </div>
+
+        {/* Heart Rate */}
+        <div>
+          <label className="block text-gray-300 text-sm mb-1">
+            Heart Rate (BPM)
+          </label>
+          <input
+            type="number"
+            min="0"
+            max="220"
+            value={activity.additionalMetrics.heartRateBpm}
+            onChange={(e) => handleAdditionalMetricChange('heartRateBpm', e.target.value)}
+            className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-sm"
+            placeholder="e.g., 120, 150"
+          />
+        </div>
+
+        {/* Distance */}
+        <div>
+          <label className="block text-gray-300 text-sm mb-1">
+            Distance (km)
+          </label>
+          <input
+            type="number"
+            min="0"
+            step="0.1"
+            value={activity.additionalMetrics.distance}
+            onChange={(e) => handleAdditionalMetricChange('distance', e.target.value)}
+            className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-sm"
+            placeholder="e.g., 5, 10.5"
           />
         </div>
       </div>

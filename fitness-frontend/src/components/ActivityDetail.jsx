@@ -18,9 +18,12 @@ const ActivityDetail = () => {
     type: '',
     duration: '',
     caloriesBurned: '',
+    startTime: '',
     timeOfDay: '',
     mealTiming: '',
-    waterIntakeMl: ''
+    waterIntakeMl: '',
+    heartRateBpm: '',
+    distance: ''
   });
 
   const formatTimeOfDay = (value) => {
@@ -84,12 +87,27 @@ const ActivityDetail = () => {
         type: activity.type || '',
         duration: activity.duration ?? '',
         caloriesBurned: activity.caloriesBurned ?? '',
+        startTime: activity.startTime ? formatForDatetimeLocal(activity.startTime) : '',
         timeOfDay: metrics.timeOfDay || '',
         mealTiming: metrics.mealTiming || '',
-        waterIntakeMl: metrics.waterIntakeMl ?? ''
+        waterIntakeMl: metrics.waterIntakeMl ?? '',
+        heartRateBpm: metrics.heartRateBpm ?? '',
+        distance: metrics.distance ?? ''
       });
     }
   }, [activity]);
+
+  const formatForDatetimeLocal = (isoString) => {
+    try {
+      const dt = new Date(isoString);
+      // shift to local and strip seconds
+      const tzOffset = dt.getTimezoneOffset();
+      const local = new Date(dt.getTime() - tzOffset * 60000);
+      return local.toISOString().slice(0,16);
+    } catch (e) {
+      return '';
+    }
+  }
 
   const handleDelete = async () => {
     if (!window.confirm("Are you sure you want to delete this activity?")) return;
@@ -120,13 +138,20 @@ const ActivityDetail = () => {
         type: editData.type,
         duration: Number(editData.duration),
         caloriesBurned: Number(editData.caloriesBurned),
-        startTime: activity.startTime,
+        // prefer edited startTime if provided, otherwise keep existing
+        startTime: editData.startTime && editData.startTime !== '' ? editData.startTime : activity.startTime,
         additionalMetrics: {
           ...(activity.additionalMetrics || {}),
           timeOfDay: editData.timeOfDay,
           mealTiming: editData.mealTiming,
           waterIntakeMl: editData.waterIntakeMl
             ? Number(editData.waterIntakeMl)
+            : null,
+          heartRateBpm: editData.heartRateBpm
+            ? Number(editData.heartRateBpm)
+            : null,
+          distance: editData.distance
+            ? Number(editData.distance)
             : null
         }
       };
@@ -141,12 +166,19 @@ const ActivityDetail = () => {
         type: editData.type,
         duration: Number(editData.duration),
         caloriesBurned: Number(editData.caloriesBurned),
+        startTime: updatedPayload.startTime,
         additionalMetrics: {
           ...(prev.additionalMetrics || {}),
           timeOfDay: editData.timeOfDay,
           mealTiming: editData.mealTiming,
           waterIntakeMl: editData.waterIntakeMl
             ? Number(editData.waterIntakeMl)
+            : null,
+          heartRateBpm: editData.heartRateBpm
+            ? Number(editData.heartRateBpm)
+            : null,
+          distance: editData.distance
+            ? Number(editData.distance)
             : null
         }
       }));
@@ -243,11 +275,13 @@ const ActivityDetail = () => {
               <Calendar className="text-purple-400" size={20} />
               <p className="text-gray-400 text-sm font-medium">Date</p>
             </div>
-            <p className="text-lg font-semibold text-white">
-              {activity.createdAt
-                ? new Date(activity.createdAt).toLocaleString()
-                : 'N/A'}
-            </p>
+                <p className="text-lg font-semibold text-white">
+                  {activity.startTime
+                    ? new Date(activity.startTime).toLocaleString()
+                    : activity.createdAt
+                      ? new Date(activity.createdAt).toLocaleString()
+                      : 'N/A'}
+                </p>
           </div>
 
           {/* Time of Day */}
@@ -281,6 +315,32 @@ const ActivityDetail = () => {
             <p className="text-xl font-semibold text-white">
               {metrics.waterIntakeMl != null && metrics.waterIntakeMl !== ''
                 ? `${metrics.waterIntakeMl} ml`
+                : 'Not specified'}
+            </p>
+          </div>
+
+          {/* Heart Rate */}
+          <div className="bg-gray-700/50 rounded-lg p-5 border border-gray-600">
+            <div className="flex items-center gap-3 mb-2">
+              <Flame className="text-red-400" size={20} />
+              <p className="text-gray-400 text-sm font-medium">Heart Rate</p>
+            </div>
+            <p className="text-xl font-semibold text-white">
+              {metrics.heartRateBpm != null && metrics.heartRateBpm !== ''
+                ? `${metrics.heartRateBpm} BPM`
+                : 'Not specified'}
+            </p>
+          </div>
+
+          {/* Distance */}
+          <div className="bg-gray-700/50 rounded-lg p-5 border border-gray-600">
+            <div className="flex items-center gap-3 mb-2">
+              <TrendingUp className="text-blue-400" size={20} />
+              <p className="text-gray-400 text-sm font-medium">Distance</p>
+            </div>
+            <p className="text-xl font-semibold text-white">
+              {metrics.distance != null && metrics.distance !== ''
+                ? `${metrics.distance} km`
                 : 'Not specified'}
             </p>
           </div>
@@ -366,6 +426,23 @@ const ActivityDetail = () => {
                 </select>
               </div>
 
+              {/* Start Date & Time */}
+              <div>
+                <label className="block text-gray-300 mb-1">Start Date & Time</label>
+                <input
+                  type="datetime-local"
+                  value={editData.startTime}
+                  onChange={(e) => handleEditFieldChange('startTime', e.target.value)}
+                  max={(() => {
+                    const now = new Date();
+                    const tzOffset = now.getTimezoneOffset();
+                    const local = new Date(now.getTime() - tzOffset * 60000);
+                    return local.toISOString().slice(0,16);
+                  })()}
+                  className="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600"
+                />
+              </div>
+
               {/* Meal Timing */}
               <div>
                 <label className="block text-gray-300 mb-1">Before/After Lunch</label>
@@ -388,6 +465,32 @@ const ActivityDetail = () => {
                   min="0"
                   value={editData.waterIntakeMl}
                   onChange={(e) => handleEditFieldChange('waterIntakeMl', e.target.value)}
+                  className="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600"
+                />
+              </div>
+
+              {/* Heart Rate */}
+              <div>
+                <label className="block text-gray-300 mb-1">Heart Rate (BPM)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="220"
+                  value={editData.heartRateBpm}
+                  onChange={(e) => handleEditFieldChange('heartRateBpm', e.target.value)}
+                  className="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600"
+                />
+              </div>
+
+              {/* Distance */}
+              <div>
+                <label className="block text-gray-300 mb-1">Distance (km)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={editData.distance}
+                  onChange={(e) => handleEditFieldChange('distance', e.target.value)}
                   className="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600"
                 />
               </div>

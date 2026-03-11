@@ -51,6 +51,7 @@ public class ActivityAIService {
             addAnalysisSection(fullAnalysis, analysisNode, "overall", "Overall:");
             addAnalysisSection(fullAnalysis, analysisNode, "pace", "Pace:");
             addAnalysisSection(fullAnalysis, analysisNode, "heartRate", "Heart Rate:");
+            addAnalysisSection(fullAnalysis, analysisNode, "distance", "Distance:");
             addAnalysisSection(fullAnalysis, analysisNode, "caloriesBurned", "Calories:");
 
             List<String> improvements = extractImprovements(analysisJson.path("improvements"));
@@ -148,6 +149,7 @@ public class ActivityAIService {
             "overall": "Overall analysis here",
             "pace": "Pace analysis here",
             "heartRate": "Heart rate analysis here",
+            "distance": "Distance analysis here",
             "caloriesBurned": "Calories analysis here"
           },
           "improvements": [
@@ -171,15 +173,22 @@ public class ActivityAIService {
         Analyze this activity:
         Activity Type: %s
         Duration: %d minutes
+        Start Time: %s
         Calories Burned: %d
+        Heart Rate (BPM): %s
+        Distance (km): %s
         Additional Metrics: %s
         
         Provide detailed analysis focusing on performance, improvements, next workout suggestions, and safety guidelines.
+        Include analysis on heart rate zones if heart rate is provided and distance covered if available.
         Ensure the response follows the EXACT JSON format shown above.
         """,
                 activity.getType(),
                 activity.getDuration(),
+                activity.getStartTime(),
                 activity.getCaloriesBurned(),
+                activity.getAdditionalMetrics().get("heartRateBpm") != null ? activity.getAdditionalMetrics().get("heartRateBpm") : "Not recorded",
+                activity.getAdditionalMetrics().get("distance") != null ? activity.getAdditionalMetrics().get("distance") : "Not recorded",
                 activity.getAdditionalMetrics()
         );
     }

@@ -17,7 +17,7 @@ spring:
 gemini:
   api:
     url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
-    key: AIzaSyBou9lQaJ7oE8Q82zWgeaPHnXw2ZFPCXkI
+    key: AIzaSyB7qBtbjhS4NYaRhUMityHq4tqqRRaqjks
 
 kafka:
   topic:

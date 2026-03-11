@@ -149,6 +149,15 @@ const Navbar = ({ isAuthenticated, tokenData, onLogin, onLogout }) => {
                 >
                   Sign Up
                 </button>
+                <a 
+                  href="http://localhost:8181/realms/master/protocol/openid-connect/auth?client_id=security-admin-console&redirect_uri=http%3A%2F%2Flocalhost%3A8181%2Fadmin%2Fmaster%2Fconsole%2F&state=336f4869-753f-4e05-b268-dfe44e6b97f7&response_mode=query&response_type=code&scope=openid&nonce=2902d528-c48e-4efd-8c6e-fe439e341d52&code_challenge=m1Rz5IsmaNx7sFGyCQVieH1sKHJujcDVv4CKn2tgnXc&code_challenge_method=S256"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  type="button"
+                  className='px-4 py-1 sm:px-6 sm:py-2 bg-transparent border-2 border-purple-600 text-purple-400 hover:bg-purple-600 hover:text-white transition rounded-full font-medium cursor-pointer'
+                >
+                  Admin Sign In
+                </a>
               </div>
             ) : (
               <div className='relative group'>
@@ -221,6 +230,39 @@ const Navbar = ({ isAuthenticated, tokenData, onLogin, onLogout }) => {
                   <Search size={24} />
                   Search Activities
                 </button>
+              </>
+            )}
+            {!isAuthenticated && (
+              <>
+                <button 
+                  onClick={() => {
+                    handleLoginClick({preventDefault: () => {}})
+                    setIsOpen(false)
+                  }}
+                  type="button"
+                  className='px-6 py-2 bg-transparent border-2 border-blue-600 text-blue-400 hover:bg-blue-600 hover:text-white transition rounded-full font-medium cursor-pointer text-lg'
+                >
+                  Login
+                </button>
+                <button 
+                  onClick={() => {
+                    handleSignupClick({preventDefault: () => {}})
+                    setIsOpen(false)
+                  }}
+                  type="button"
+                  className='px-6 py-2 bg-blue-600 hover:bg-blue-700 transition rounded-full font-medium cursor-pointer text-white border-none text-lg'
+                >
+                  Sign Up
+                </button>
+                <a 
+                  href="http://localhost:8181/realms/master/protocol/openid-connect/auth?client_id=security-admin-console&redirect_uri=http%3A%2F%2Flocalhost%3A8181%2Fadmin%2Fmaster%2Fconsole%2F&state=336f4869-753f-4e05-b268-dfe44e6b97f7&response_mode=query&response_type=code&scope=openid&nonce=2902d528-c48e-4efd-8c6e-fe439e341d52&code_challenge=m1Rz5IsmaNx7sFGyCQVieH1sKHJujcDVv4CKn2tgnXc&code_challenge_method=S256"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  type="button"
+                  className='px-6 py-2 bg-transparent border-2 border-purple-600 text-purple-400 hover:bg-purple-600 hover:text-white transition rounded-full font-medium cursor-pointer text-lg'
+                >
+                  Admin Sign In
+                </a>
               </>
             )}
           </div>

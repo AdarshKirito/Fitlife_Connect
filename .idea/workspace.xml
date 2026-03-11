@@ -4,7 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="cf92d4f1-ac47-4e04-8535-49288bd8ea87" name="Changes" comment="changes" />
+    <list default="true" id="cf92d4f1-ac47-4e04-8535-49288bd8ea87" name="Changes" comment="changes">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/aiservice/src/main/java/com/fitness/aiservice/service/ActivityAIService.java" beforeDir="false" afterPath="$PROJECT_DIR$/aiservice/src/main/java/com/fitness/aiservice/service/ActivityAIService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/configserver/src/main/resources/config/ai-service.yml" beforeDir="false" afterPath="$PROJECT_DIR$/configserver/src/main/resources/config/ai-service.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/configserver/src/main/resources/config/gateway-service.yml" beforeDir="false" afterPath="$PROJECT_DIR$/configserver/src/main/resources/config/gateway-service.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fitness-frontend/src/components/ActivityDetail.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/fitness-frontend/src/components/ActivityDetail.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fitness-frontend/src/components/ActivityForm.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/fitness-frontend/src/components/ActivityForm.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fitness-frontend/src/components/Navbar.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/fitness-frontend/src/components/Navbar.jsx" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -172,6 +180,9 @@
       <workItem from="1764712083905" duration="1845000" />
       <workItem from="1764823126069" duration="1529000" />
       <workItem from="1764853884828" duration="293000" />
+      <workItem from="1765279212560" duration="10262000" />
+      <workItem from="1765305846695" duration="1360000" />
+      <workItem from="1765471993004" duration="831000" />
     </task>
     <task id="LOCAL-00001" summary="changes">
       <option name="closed" value="true" />
