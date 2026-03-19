@@ -45,6 +45,8 @@ const ActivityDetail = () => {
   };
 
   useEffect(() => {
+    let retryTimeoutId;
+
     const fetchActivityDetail = async () => {
       try {
         setLoadingActivity(true);
@@ -57,7 +59,7 @@ const ActivityDetail = () => {
       }
     }
 
-    const fetchRecommendation = async () => {
+    const fetchRecommendation = async (attempt = 0) => {
       try {
         setLoadingRecommendation(true);
         const response = await getActivityRecommendation(id); // /recommendations/activity/{id}
@@ -65,6 +67,14 @@ const ActivityDetail = () => {
         setRecError(null);
       } catch (error) {
         if (error.response && error.response.status === 404) {
+          const maxAttempts = 6;
+          if (attempt < maxAttempts) {
+            setRecError('AI recommendation is being generated. Retrying...');
+            retryTimeoutId = setTimeout(() => {
+              fetchRecommendation(attempt + 1);
+            }, 5000);
+            return;
+          }
           setRecError('No AI recommendation generated yet for this activity.');
         } else {
           console.error('Error fetching recommendation:', error);
@@ -77,6 +87,12 @@ const ActivityDetail = () => {
 
     fetchActivityDetail();
     fetchRecommendation();
+
+    return () => {
+      if (retryTimeoutId) {
+        clearTimeout(retryTimeoutId);
+      }
+    };
   }, [id]);
 
   // When activity is loaded, prefill edit form

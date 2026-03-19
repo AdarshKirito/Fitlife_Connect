@@ -1,0 +1,238 @@
+airecommendationfitness
+recommendations
+aiactivityfitness
+activities
+
+
+Docker setup
+
+docker run -d -p 127.0.0.1:8181:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin quay.io/keycloak/keycloak:26.4.5 start-dev
+
+docker pull apache/kafka:4.0.0
+docker run -d -p 9092:9092 apache/kafka:4.0.0
+
+
+setup keyclock
+
+Part 1: Create the frontend PKCE client
+
+This client is for your frontend app running on http://localhost:5173.
+
+Step 1
+
+Open Keycloak Admin Console.
+
+Step 2
+
+Select your current realm where your app users exist.
+
+Do not use master unless you are doing platform-wide admin work.
+
+Step 3
+
+Go to:
+
+Clients → Create client
+
+Step 4
+
+Enter:
+
+Client type / protocol: OpenID Connect
+
+Client ID: oauth2-pkce-client
+
+Then click Next.
+
+Step 5
+
+On capability/config page, set:
+
+Client authentication: OFF
+
+Authorization: OFF
+
+Standard flow: ON
+
+Direct access grants: usually OFF
+
+Implicit flow: OFF
+
+Then click Next.
+
+Important
+
+For a PKCE-based frontend app, Client authentication must be OFF because it is a public client. That is the current Keycloak guidance for browser apps.
+
+About Direct Access Grants
+
+Enable Direct Access Grants only if your frontend is explicitly sending username/password to Keycloak’s token endpoint. In most modern frontend setups with PKCE, you do not need it. It is safer to leave it OFF unless your code depends on it.
+
+Step 6
+
+In login settings, enter:
+
+Root URL: http://localhost:5173
+
+Home URL: http://localhost:5173
+
+Valid redirect URIs: http://localhost:5173/*
+
+Web origins: http://localhost:5173
+
+Then click Save.
+
+Why /*?
+
+Because your frontend callback may be something like:
+
+http://localhost:5173
+
+http://localhost:5173/callback
+
+http://localhost:5173/silent-check-sso.html
+
+Keycloak recommends precise redirect URIs and web origins.
+
+Step 7
+
+After saving, open the client again and find the advanced settings or login/settings section for PKCE.
+
+Set:
+
+PKCE Code Challenge Method: S256
+
+Save again.
+
+Correct value
+
+Use S256, not plain, for the frontend PKCE client.
+That matches OAuth 2.1 / current best practice.
+
+Part 2: Create the backend service client
+
+This client is used by your backend service to call Keycloak Admin API and create users.
+
+Step 1
+
+Go to:
+
+Clients → Create client
+
+Step 2
+
+Enter:
+
+Client type / protocol: OpenID Connect
+
+Client ID: fitlife-backend
+
+Click Next.
+
+Step 3
+
+On capability/config page, set:
+
+Client authentication: ON
+
+Service accounts roles: ON
+
+Standard flow: OFF
+
+Direct access grants: OFF
+
+Implicit flow: OFF
+
+Click Next, then Save.
+
+Important correction
+
+For this backend admin client:
+
+do not use PKCE
+
+do not use Standard flow
+
+do not use Direct Access Grants
+
+use Service Accounts only
+
+This client will use client credentials grant with client ID and secret.
+
+Step 4
+
+Open the saved client fitlife-backend.
+
+Go to:
+
+Credentials
+
+Copy the client secret.
+
+You will put this into your backend config, such as your gateway service.
+
+Part 3: Assign roles to the backend service account
+
+Now you must give this backend client permission to create users.
+
+Step 1
+
+Open client:
+
+Clients → fitlife-backend
+
+Step 2
+
+Go to:
+
+Service account roles
+
+Step 3
+
+In the client roles selector, choose:
+
+realm-management
+
+Step 4
+
+Assign these roles:
+
+manage-users
+
+view-users
+
+optionally query-users
+
+Correct role names
+
+Use:
+
+manage-users
+
+view-users
+
+Not:
+
+manage-user
+
+realm-admin unless you really want full admin access
+
+
+how to start
+
+Very short version
+
+Use the current realm.
+Create:
+
+oauth2-pkce-client → public frontend client, standard flow on, PKCE S256
+
+fitlife-backend → confidential backend client, service accounts on, no PKCE
+
+For fitlife-backend, assign:
+
+realm-management → manage-users
+
+realm-management → view-users
+
+Then copy the secret into your backend config.

@@ -14,10 +14,11 @@ spring:
         spring.json.value.default.type: com.fitness.aiservice.model.Activity
         spring.json.trusted.packages: "*"
 
-gemini:
+openai:
   api:
-    url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent
-    key: AIzaSyB7qBtbjhS4NYaRhUMityHq4tqqRRaqjks
+    url: https://api.openai.com/v1/chat/completions
+    key: ${OPENAI_API_KEY:}
+    model: gpt-4o-mini
 
 kafka:
   topic:

@@ -19,7 +19,7 @@ public class ActivityMessageListener {
 
     @KafkaListener(topics = "${kafka.topic.name}", groupId = "activity-processor-group")
     public void processActivity(Activity activity) {
-        log.info("Received Activity for processing: {}", activity.getUserId());
+        log.info("Received Activity for processing. activityId={}, userId={}", activity.getId(), activity.getUserId());
         Recommendation recommendation = activityAIService.generateRecommendation(activity);
         recommendationRepository.findByActivityId(activity.getId())
                 .ifPresentOrElse(existing -> {
@@ -30,8 +30,10 @@ public class ActivityMessageListener {
                     existing.setSafety(recommendation.getSafety());
                     existing.setCreatedAt(recommendation.getCreatedAt());
                     recommendationRepository.save(existing);
+                    log.info("Updated recommendation for activityId={}", activity.getId());
                 }, () -> {
                     recommendationRepository.save(recommendation);
+                    log.info("Created recommendation for activityId={}", activity.getId());
                 });
     }
 }

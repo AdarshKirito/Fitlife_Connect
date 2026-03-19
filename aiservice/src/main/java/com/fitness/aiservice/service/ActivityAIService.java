@@ -16,13 +16,13 @@ import java.util.*;
 @Slf4j
 @AllArgsConstructor
 public class ActivityAIService {
-    private final GeminiService geminiService;
+  private final OpenAIService openAIService;
 
     private final ObjectMapper objectMapper;
 
     public Recommendation generateRecommendation(Activity activity) {
         String prompt = createPromptForActivity(activity);
-        String aiResponse = geminiService.getRecommendations(prompt);
+      String aiResponse = openAIService.getRecommendations(prompt);
         log.info("RESPONSE FROM AI {} ", aiResponse);
         return processAIResponse(activity, aiResponse);
     }
@@ -31,17 +31,19 @@ public class ActivityAIService {
         try {
             ObjectMapper mapper = new ObjectMapper();
             JsonNode rootNode = mapper.readTree(aiResponse);
-            JsonNode textNode = rootNode.path("candidates")
-                    .get(0)
-                    .path("content")
-                    .get("parts")
-                    .get(0)
-                    .path("text");
+            JsonNode textNode = rootNode.path("choices")
+              .get(0)
+              .path("message")
+              .path("content");
+
+            if (textNode.isMissingNode() || textNode.isNull()) {
+          throw new IllegalStateException("OpenAI response missing choices[0].message.content");
+            }
 
             String jsonContent = textNode.asText()
-                    .replaceAll("```json\\n","")
-                    .replaceAll("\\n```","")
-                    .trim();
+              .replace("```json", "")
+              .replace("```", "")
+              .trim();
 
 //            log.info("RESPONSE FROM CLEANED AI {} ", jsonContent);
 
@@ -198,7 +200,7 @@ public class ActivityAIService {
             String existingRecsJson = objectMapper.writeValueAsString(recs);
 
             String prompt = createPromptForUserFromRecommendations(userId, existingRecsJson);
-            String aiResponse = geminiService.getRecommendations(prompt);
+            String aiResponse = openAIService.getRecommendations(prompt);
             log.info("USER-LEVEL RESPONSE FROM AI: {}", aiResponse);
 
             // Use dummy activity just to reuse processAIResponse()

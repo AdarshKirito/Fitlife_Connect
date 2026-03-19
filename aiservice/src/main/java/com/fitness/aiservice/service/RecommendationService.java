@@ -4,6 +4,8 @@ import com.fitness.aiservice.model.Recommendation;
 import com.fitness.aiservice.respository.RecommendationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 import java.util.List;
 
@@ -17,7 +19,10 @@ public class RecommendationService {
         List<Recommendation> recs = recommendationRepository.findByUserId(userId);
 
         if (recs == null || recs.isEmpty()) {
-            throw new RuntimeException("No recommendations found for user: " + userId);
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "No recommendations found yet for user: " + userId
+            );
         }
 
         return activityAIService.generateUserCombinedRecommendation(userId, recs);
@@ -25,6 +30,9 @@ public class RecommendationService {
 
     public Recommendation getActivityRecommendation(String activityId) {
         return recommendationRepository.findByActivityId(activityId)
-                .orElseThrow(() -> new RuntimeException("No recommendation found for this activity: " + activityId));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "No recommendation found yet for this activity: " + activityId
+                ));
     }
 }
