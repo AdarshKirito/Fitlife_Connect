@@ -25,6 +25,14 @@ export const addActivity = (activity) => api.post('/activities', activity);
 export const getActivityDetail = (id) => api.get(`/activities/${id}`);
 export const getActivityRecommendation = (id) =>
   api.get(`/recommendations/activity/${id}`);
+export const getWeeklyRecommendation = (userId) =>
+    api.get(`/recommendations/weekly/${userId}`);
+export const regenerateWeeklyRecommendation = (userId) =>
+    api.post(`/recommendations/weekly/${userId}/regenerate`);
+export const getWeeklyPlanHistory = (userId) =>
+    api.get(`/recommendations/weekly/${userId}/history`);
+export const updateWeeklyPlanDayCompletion = (weeklyPlanId, day, completed) =>
+    api.patch(`/recommendations/weekly/${weeklyPlanId}/days`, { day, completed });
 
 export const deleteActivity = (id) => api.delete(`/activities/${id}`);
 export const updateActivity = (id, data) => api.put(`/activities/${id}`, data);

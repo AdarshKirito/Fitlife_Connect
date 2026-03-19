@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Menu, Search, X, Activity, TrendingUp } from 'lucide-react'
+import { Menu, Search, X, Activity, TrendingUp, CalendarDays } from 'lucide-react'
 import { getActivities } from '../services/api'
 import SignupModal from './SignupModal'
 
@@ -87,6 +87,10 @@ const Navbar = ({ isAuthenticated, tokenData, onLogin, onLogout }) => {
     navigate('/complete-recommendation')
   }
 
+  const handleWeeklyPlanClick = () => {
+    navigate('/weekly-plan')
+  }
+
   return (
     <>
       <div className='fixed top-0 left-0 z-50 w-full flex items-center justify-between px-6 md:px-16 lg:px-36 py-5 bg-black/70 backdrop-blur'>
@@ -117,6 +121,13 @@ const Navbar = ({ isAuthenticated, tokenData, onLogin, onLogout }) => {
               >
                 <TrendingUp size={18} />
                 Get Recommendations
+              </button>
+              <button
+                onClick={handleWeeklyPlanClick}
+                className='text-white hover:text-gray-300 transition flex items-center gap-2'
+              >
+                <CalendarDays size={18} />
+                Weekly Plan
               </button>
             </>
           )}
@@ -219,6 +230,16 @@ const Navbar = ({ isAuthenticated, tokenData, onLogin, onLogout }) => {
                 >
                   <TrendingUp size={24} />
                   Get Recommendations
+                </button>
+                <button
+                  onClick={() => {
+                    setIsOpen(false)
+                    navigate('/weekly-plan')
+                  }}
+                  className='text-white text-xl font-medium hover:text-gray-300 flex items-center gap-2'
+                >
+                  <CalendarDays size={24} />
+                  Weekly Plan
                 </button>
                 <button
                   onClick={() => {

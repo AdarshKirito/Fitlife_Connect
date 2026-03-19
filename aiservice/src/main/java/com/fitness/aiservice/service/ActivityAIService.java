@@ -234,6 +234,51 @@ public class ActivityAIService {
         }
     }
 
+            public Recommendation generateWeeklyPlanRecommendation(String userId, List<Recommendation> recs) {
+              try {
+                String existingRecsJson = objectMapper.writeValueAsString(recs);
+
+                String prompt = createPromptForWeeklyPlanFromRecommendations(userId, existingRecsJson);
+                String aiResponse = openAIService.getRecommendations(prompt);
+                log.info("WEEKLY-PLAN RESPONSE FROM AI: {}", aiResponse);
+
+                Activity dummy = new Activity();
+                dummy.setId(null);
+                dummy.setUserId(userId);
+                dummy.setType(ActivityType.OTHER);
+                dummy.setDuration(null);
+                dummy.setCaloriesBurned(null);
+                dummy.setAdditionalMetrics(Map.of("recommendationsCount", recs.size()));
+
+                Recommendation weeklyPlan = processAIResponse(dummy, aiResponse);
+                weeklyPlan.setType("WEEKLY_PLAN");
+                return weeklyPlan;
+              } catch (Exception e) {
+                e.printStackTrace();
+                return Recommendation.builder()
+                    .userId(userId)
+                    .type("WEEKLY_PLAN")
+                    .recommendation("Unable to generate your weekly plan right now.")
+                    .improvements(Collections.singletonList("Keep activity logging consistent to improve plan quality."))
+                    .suggestions(Arrays.asList(
+                        "Monday - 30 min moderate cardio",
+                        "Tuesday - 20 min strength training",
+                        "Wednesday - 30 min walk and mobility",
+                        "Thursday - 25 min interval workout",
+                        "Friday - 20 min core + stretching",
+                        "Saturday - 40 min endurance session",
+                        "Sunday - Recovery day with light stretching"
+                    ))
+                    .safety(Arrays.asList(
+                        "Warm up for 5-10 minutes before every session",
+                        "Stay hydrated before and after workouts",
+                        "Reduce intensity if you feel unusual discomfort"
+                    ))
+                    .createdAt(LocalDateTime.now())
+                    .build();
+              }
+            }
+
     private String createPromptForUserFromRecommendations(String userId, String recsJsonArray) {
         return String.format("""
         You are an expert fitness coach.
@@ -281,6 +326,51 @@ public class ActivityAIService {
         }
 
         Focus on patterns across ALL activities (e.g., low intensity, poor tracking, consistency).
+        """, userId, recsJsonArray);
+    }
+
+    private String createPromptForWeeklyPlanFromRecommendations(String userId, String recsJsonArray) {
+        return String.format("""
+        You are an expert fitness coach.
+
+        Build a personalized 7-day weekly plan based on this user's existing activity recommendations.
+
+        USER ID: %s
+
+        INPUT RECOMMENDATIONS (JSON ARRAY):
+        %s
+
+        Return ONLY valid JSON using this exact structure (no markdown, no extra text):
+        {
+          "analysis": {
+            "overall": "High-level summary of current fitness level and weekly strategy",
+            "pace": "How the user should pace effort through the week",
+            "heartRate": "Heart-rate/intensity guidance for the week",
+            "caloriesBurned": "Expected calorie-burn pattern across the week"
+          },
+          "improvements": [
+            {
+              "area": "Key focus area",
+              "recommendation": "What to improve this week"
+            }
+          ],
+          "suggestions": [
+            {
+              "workout": "Day label like Monday/Tuesday",
+              "description": "Concrete workout plan for that day, duration, and intensity"
+            }
+          ],
+          "safety": [
+            "Safety guidance 1",
+            "Safety guidance 2"
+          ]
+        }
+
+        Requirements:
+        - Generate suggestions for all 7 days (Monday to Sunday).
+        - Include at least one light/recovery day.
+        - Keep plan realistic and progressive.
+        - Use concise and actionable wording.
         """, userId, recsJsonArray);
     }
 
