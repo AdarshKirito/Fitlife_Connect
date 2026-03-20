@@ -4,6 +4,80 @@ import { getActivityDetail, deleteActivity, getActivityRecommendation, updateAct
 import { ArrowLeft, Calendar, Clock, Flame, TrendingUp, AlertCircle, Lightbulb, ShieldCheck, Droplet } from 'lucide-react';
 
 const ActivityDetail = () => {
+  const metricKeys = [
+    'timeOfDay',
+    'mealTiming',
+    'waterIntakeMl',
+    'heartRateBpm',
+    'distance',
+    'sets',
+    'reps',
+    'weightKg',
+    'avgSpeedKmh',
+    'elevationGainM',
+    'sessionIntensity',
+    'focusArea',
+    'strokeType'
+  ];
+  const metricVisibilityByType = {
+    RUNNING: { timeOfDay: true, mealTiming: true, waterIntakeMl: true, heartRateBpm: true, distance: true, sets: false, reps: false, weightKg: false, avgSpeedKmh: false, elevationGainM: false, sessionIntensity: false, focusArea: false, strokeType: false },
+    WALKING: { timeOfDay: true, mealTiming: true, waterIntakeMl: true, heartRateBpm: true, distance: true, sets: false, reps: false, weightKg: false, avgSpeedKmh: false, elevationGainM: false, sessionIntensity: false, focusArea: false, strokeType: false },
+    CYCLING: { timeOfDay: true, mealTiming: true, waterIntakeMl: true, heartRateBpm: true, distance: true, sets: false, reps: false, weightKg: false, avgSpeedKmh: true, elevationGainM: true, sessionIntensity: false, focusArea: false, strokeType: false },
+    SWIMMING: { timeOfDay: true, mealTiming: true, waterIntakeMl: true, heartRateBpm: true, distance: true, sets: false, reps: false, weightKg: false, avgSpeedKmh: false, elevationGainM: false, sessionIntensity: false, focusArea: false, strokeType: true },
+    CARDIO: { timeOfDay: true, mealTiming: true, waterIntakeMl: true, heartRateBpm: true, distance: false, sets: false, reps: false, weightKg: false, avgSpeedKmh: false, elevationGainM: false, sessionIntensity: false, focusArea: false, strokeType: false },
+    HIIT: { timeOfDay: true, mealTiming: true, waterIntakeMl: true, heartRateBpm: true, distance: false, sets: false, reps: false, weightKg: false, avgSpeedKmh: false, elevationGainM: false, sessionIntensity: true, focusArea: false, strokeType: false },
+    WEIGHT_TRAINING: { timeOfDay: true, mealTiming: true, waterIntakeMl: true, heartRateBpm: false, distance: false, sets: true, reps: true, weightKg: true, avgSpeedKmh: false, elevationGainM: false, sessionIntensity: true, focusArea: false, strokeType: false },
+    YOGA: { timeOfDay: true, mealTiming: true, waterIntakeMl: true, heartRateBpm: false, distance: false, sets: false, reps: false, weightKg: false, avgSpeedKmh: false, elevationGainM: false, sessionIntensity: true, focusArea: true, strokeType: false },
+    STRETCHING: { timeOfDay: true, mealTiming: true, waterIntakeMl: true, heartRateBpm: false, distance: false, sets: false, reps: false, weightKg: false, avgSpeedKmh: false, elevationGainM: false, sessionIntensity: true, focusArea: true, strokeType: false },
+    OTHER: { timeOfDay: true, mealTiming: true, waterIntakeMl: true, heartRateBpm: false, distance: false, sets: false, reps: false, weightKg: false, avgSpeedKmh: false, elevationGainM: false, sessionIntensity: false, focusArea: false, strokeType: false }
+  };
+
+  const getVisibleMetrics = (type) => metricVisibilityByType[type] || metricVisibilityByType.OTHER;
+
+  const pruneHiddenMetrics = (values, type) => {
+    const visible = getVisibleMetrics(type);
+    return metricKeys.reduce((acc, key) => {
+      acc[key] = visible[key] ? (values[key] ?? '') : '';
+      return acc;
+    }, {});
+  };
+
+  const buildPayloadMetrics = (values, type) => {
+    const visible = getVisibleMetrics(type);
+    const payload = {};
+
+    if (visible.timeOfDay && values.timeOfDay) payload.timeOfDay = values.timeOfDay;
+    if (visible.mealTiming && values.mealTiming) payload.mealTiming = values.mealTiming;
+    if (visible.waterIntakeMl && values.waterIntakeMl !== '') payload.waterIntakeMl = Number(values.waterIntakeMl);
+    if (visible.heartRateBpm && values.heartRateBpm !== '') payload.heartRateBpm = Number(values.heartRateBpm);
+    if (visible.distance && values.distance !== '') payload.distance = Number(values.distance);
+    if (visible.sets && values.sets !== '') payload.sets = Number(values.sets);
+    if (visible.reps && values.reps !== '') payload.reps = Number(values.reps);
+    if (visible.weightKg && values.weightKg !== '') payload.weightKg = Number(values.weightKg);
+    if (visible.avgSpeedKmh && values.avgSpeedKmh !== '') payload.avgSpeedKmh = Number(values.avgSpeedKmh);
+    if (visible.elevationGainM && values.elevationGainM !== '') payload.elevationGainM = Number(values.elevationGainM);
+    if (visible.sessionIntensity && values.sessionIntensity) payload.sessionIntensity = values.sessionIntensity;
+    if (visible.focusArea && values.focusArea) payload.focusArea = values.focusArea;
+    if (visible.strokeType && values.strokeType) payload.strokeType = values.strokeType;
+
+    return payload;
+  };
+
+  const getDistanceLabel = (type) => (type === 'SWIMMING' ? 'Laps' : 'Distance');
+  const getDistanceUnit = (type) => (type === 'SWIMMING' ? '' : ' km');
+  const getDistanceInputLabel = (type) => (type === 'SWIMMING' ? 'Laps' : 'Distance (km)');
+  const getDistancePlaceholder = (type) => (type === 'SWIMMING' ? 'e.g., 20, 40' : 'e.g., 5, 10.5');
+  const getFieldCardLabel = (type, key) => {
+    if (key === 'strokeType') return 'Stroke Type';
+    if (key === 'avgSpeedKmh') return 'Avg Speed';
+    if (key === 'elevationGainM') return 'Elevation Gain';
+    if (key === 'sets') return 'Total Sets';
+    if (key === 'reps') return 'Total Reps';
+    if (key === 'weightKg') return 'Weight';
+    if (key === 'sessionIntensity') return 'Session Intensity';
+    if (key === 'focusArea') return type === 'YOGA' || type === 'STRETCHING' ? 'Focus Area' : 'Primary Focus';
+    return key;
+  };
 
   const { id } = useParams();
   const navigate = useNavigate();
@@ -23,7 +97,15 @@ const ActivityDetail = () => {
     mealTiming: '',
     waterIntakeMl: '',
     heartRateBpm: '',
-    distance: ''
+    distance: '',
+    sets: '',
+    reps: '',
+    weightKg: '',
+    avgSpeedKmh: '',
+    elevationGainM: '',
+    sessionIntensity: '',
+    focusArea: '',
+    strokeType: ''
   });
 
   const formatTimeOfDay = (value) => {
@@ -38,8 +120,12 @@ const ActivityDetail = () => {
 
   const formatMealTiming = (value) => {
     switch (value) {
-      case 'BEFORE_LUNCH': return 'Before lunch';
-      case 'AFTER_LUNCH': return 'After lunch';
+      case 'BEFORE_LUNCH':
+      case 'BEFORE_EATING':
+        return 'Before eating';
+      case 'AFTER_LUNCH':
+      case 'AFTER_EATING':
+        return 'After eating';
       default: return value || 'Not specified';
     }
   };
@@ -108,7 +194,15 @@ const ActivityDetail = () => {
         mealTiming: metrics.mealTiming || '',
         waterIntakeMl: metrics.waterIntakeMl ?? '',
         heartRateBpm: metrics.heartRateBpm ?? '',
-        distance: metrics.distance ?? ''
+        distance: metrics.distance ?? '',
+        sets: metrics.sets ?? '',
+        reps: metrics.reps ?? '',
+        weightKg: metrics.weightKg ?? '',
+        avgSpeedKmh: metrics.avgSpeedKmh ?? '',
+        elevationGainM: metrics.elevationGainM ?? '',
+        sessionIntensity: metrics.sessionIntensity || '',
+        focusArea: metrics.focusArea || '',
+        strokeType: metrics.strokeType || ''
       });
     }
   }, [activity]);
@@ -156,20 +250,7 @@ const ActivityDetail = () => {
         caloriesBurned: Number(editData.caloriesBurned),
         // prefer edited startTime if provided, otherwise keep existing
         startTime: editData.startTime && editData.startTime !== '' ? editData.startTime : activity.startTime,
-        additionalMetrics: {
-          ...(activity.additionalMetrics || {}),
-          timeOfDay: editData.timeOfDay,
-          mealTiming: editData.mealTiming,
-          waterIntakeMl: editData.waterIntakeMl
-            ? Number(editData.waterIntakeMl)
-            : null,
-          heartRateBpm: editData.heartRateBpm
-            ? Number(editData.heartRateBpm)
-            : null,
-          distance: editData.distance
-            ? Number(editData.distance)
-            : null
-        }
+        additionalMetrics: buildPayloadMetrics(editData, editData.type)
       };
 
       await updateActivity(id, updatedPayload);
@@ -183,20 +264,7 @@ const ActivityDetail = () => {
         duration: Number(editData.duration),
         caloriesBurned: Number(editData.caloriesBurned),
         startTime: updatedPayload.startTime,
-        additionalMetrics: {
-          ...(prev.additionalMetrics || {}),
-          timeOfDay: editData.timeOfDay,
-          mealTiming: editData.mealTiming,
-          waterIntakeMl: editData.waterIntakeMl
-            ? Number(editData.waterIntakeMl)
-            : null,
-          heartRateBpm: editData.heartRateBpm
-            ? Number(editData.heartRateBpm)
-            : null,
-          distance: editData.distance
-            ? Number(editData.distance)
-            : null
-        }
+        additionalMetrics: updatedPayload.additionalMetrics
       }));
 
       setIsEditing(false);
@@ -218,6 +286,17 @@ const ActivityDetail = () => {
     setEditData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleEditTypeChange = (type) => {
+    setEditData(prev => {
+      const pruned = pruneHiddenMetrics(prev, type);
+      return {
+        ...prev,
+        ...pruned,
+        type
+      };
+    });
+  };
+
   if (loadingActivity || !activity) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-900">
@@ -230,6 +309,8 @@ const ActivityDetail = () => {
   }
 
   const metrics = activity.additionalMetrics || {};
+  const visibleDetailMetrics = getVisibleMetrics(activity.type);
+  const visibleEditMetrics = getVisibleMetrics(editData.type || activity.type);
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6">
@@ -301,6 +382,7 @@ const ActivityDetail = () => {
           </div>
 
           {/* Time of Day */}
+          {visibleDetailMetrics.timeOfDay && (
           <div className="bg-gray-700/50 rounded-lg p-5 border border-gray-600">
             <div className="flex items-center gap-3 mb-2">
               <Clock className="text-blue-300" size={20} />
@@ -310,8 +392,10 @@ const ActivityDetail = () => {
               {formatTimeOfDay(metrics.timeOfDay)}
             </p>
           </div>
+          )}
 
           {/* Meal Timing */}
+          {visibleDetailMetrics.mealTiming && (
           <div className="bg-gray-700/50 rounded-lg p-5 border border-gray-600">
             <div className="flex items-center gap-3 mb-2">
               <Flame className="text-pink-300" size={20} />
@@ -321,8 +405,10 @@ const ActivityDetail = () => {
               {formatMealTiming(metrics.mealTiming)}
             </p>
           </div>
+          )}
 
           {/* Water Intake */}
+          {visibleDetailMetrics.waterIntakeMl && (
           <div className="bg-gray-700/50 rounded-lg p-5 border border-gray-600">
             <div className="flex items-center gap-3 mb-2">
               <Droplet className="text-cyan-300" size={20} />
@@ -334,8 +420,10 @@ const ActivityDetail = () => {
                 : 'Not specified'}
             </p>
           </div>
+          )}
 
           {/* Heart Rate */}
+          {visibleDetailMetrics.heartRateBpm && (
           <div className="bg-gray-700/50 rounded-lg p-5 border border-gray-600">
             <div className="flex items-center gap-3 mb-2">
               <Flame className="text-red-400" size={20} />
@@ -347,19 +435,108 @@ const ActivityDetail = () => {
                 : 'Not specified'}
             </p>
           </div>
+          )}
 
-          {/* Distance */}
+          {/* Distance / Laps */}
+          {visibleDetailMetrics.distance && (
           <div className="bg-gray-700/50 rounded-lg p-5 border border-gray-600">
             <div className="flex items-center gap-3 mb-2">
               <TrendingUp className="text-blue-400" size={20} />
-              <p className="text-gray-400 text-sm font-medium">Distance</p>
+              <p className="text-gray-400 text-sm font-medium">{getDistanceLabel(activity.type)}</p>
             </div>
             <p className="text-xl font-semibold text-white">
               {metrics.distance != null && metrics.distance !== ''
-                ? `${metrics.distance} km`
+                ? `${metrics.distance}${getDistanceUnit(activity.type)}`
                 : 'Not specified'}
             </p>
           </div>
+          )}
+
+          {visibleDetailMetrics.strokeType && (
+          <div className="bg-gray-700/50 rounded-lg p-5 border border-gray-600">
+            <div className="flex items-center gap-3 mb-2">
+              <TrendingUp className="text-cyan-300" size={20} />
+              <p className="text-gray-400 text-sm font-medium">{getFieldCardLabel(activity.type, 'strokeType')}</p>
+            </div>
+            <p className="text-xl font-semibold text-white">{metrics.strokeType || 'Not specified'}</p>
+          </div>
+          )}
+
+          {visibleDetailMetrics.avgSpeedKmh && (
+          <div className="bg-gray-700/50 rounded-lg p-5 border border-gray-600">
+            <div className="flex items-center gap-3 mb-2">
+              <TrendingUp className="text-green-300" size={20} />
+              <p className="text-gray-400 text-sm font-medium">{getFieldCardLabel(activity.type, 'avgSpeedKmh')}</p>
+            </div>
+            <p className="text-xl font-semibold text-white">
+              {metrics.avgSpeedKmh != null && metrics.avgSpeedKmh !== '' ? `${metrics.avgSpeedKmh} km/h` : 'Not specified'}
+            </p>
+          </div>
+          )}
+
+          {visibleDetailMetrics.elevationGainM && (
+          <div className="bg-gray-700/50 rounded-lg p-5 border border-gray-600">
+            <div className="flex items-center gap-3 mb-2">
+              <TrendingUp className="text-purple-300" size={20} />
+              <p className="text-gray-400 text-sm font-medium">{getFieldCardLabel(activity.type, 'elevationGainM')}</p>
+            </div>
+            <p className="text-xl font-semibold text-white">
+              {metrics.elevationGainM != null && metrics.elevationGainM !== '' ? `${metrics.elevationGainM} m` : 'Not specified'}
+            </p>
+          </div>
+          )}
+
+          {visibleDetailMetrics.sets && (
+          <div className="bg-gray-700/50 rounded-lg p-5 border border-gray-600">
+            <div className="flex items-center gap-3 mb-2">
+              <Flame className="text-yellow-300" size={20} />
+              <p className="text-gray-400 text-sm font-medium">{getFieldCardLabel(activity.type, 'sets')}</p>
+            </div>
+            <p className="text-xl font-semibold text-white">{metrics.sets != null && metrics.sets !== '' ? metrics.sets : 'Not specified'}</p>
+          </div>
+          )}
+
+          {visibleDetailMetrics.reps && (
+          <div className="bg-gray-700/50 rounded-lg p-5 border border-gray-600">
+            <div className="flex items-center gap-3 mb-2">
+              <Flame className="text-orange-300" size={20} />
+              <p className="text-gray-400 text-sm font-medium">{getFieldCardLabel(activity.type, 'reps')}</p>
+            </div>
+            <p className="text-xl font-semibold text-white">{metrics.reps != null && metrics.reps !== '' ? metrics.reps : 'Not specified'}</p>
+          </div>
+          )}
+
+          {visibleDetailMetrics.weightKg && (
+          <div className="bg-gray-700/50 rounded-lg p-5 border border-gray-600">
+            <div className="flex items-center gap-3 mb-2">
+              <Flame className="text-red-300" size={20} />
+              <p className="text-gray-400 text-sm font-medium">{getFieldCardLabel(activity.type, 'weightKg')}</p>
+            </div>
+            <p className="text-xl font-semibold text-white">
+              {metrics.weightKg != null && metrics.weightKg !== '' ? `${metrics.weightKg} kg` : 'Not specified'}
+            </p>
+          </div>
+          )}
+
+          {visibleDetailMetrics.sessionIntensity && (
+          <div className="bg-gray-700/50 rounded-lg p-5 border border-gray-600">
+            <div className="flex items-center gap-3 mb-2">
+              <TrendingUp className="text-pink-300" size={20} />
+              <p className="text-gray-400 text-sm font-medium">{getFieldCardLabel(activity.type, 'sessionIntensity')}</p>
+            </div>
+            <p className="text-xl font-semibold text-white">{metrics.sessionIntensity || 'Not specified'}</p>
+          </div>
+          )}
+
+          {visibleDetailMetrics.focusArea && (
+          <div className="bg-gray-700/50 rounded-lg p-5 border border-gray-600">
+            <div className="flex items-center gap-3 mb-2">
+              <TrendingUp className="text-teal-300" size={20} />
+              <p className="text-gray-400 text-sm font-medium">{getFieldCardLabel(activity.type, 'focusArea')}</p>
+            </div>
+            <p className="text-xl font-semibold text-white">{metrics.focusArea || 'Not specified'}</p>
+          </div>
+          )}
         </div>
 
         <div className="mt-6 flex gap-3">
@@ -388,7 +565,7 @@ const ActivityDetail = () => {
                 <label className="block text-gray-300 mb-1">Activity Type</label>
                 <select
                   value={editData.type}
-                  onChange={(e) => handleEditFieldChange('type', e.target.value)}
+                  onChange={(e) => handleEditTypeChange(e.target.value)}
                   className="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600"
                 >
                   <option value="RUNNING">Running</option>
@@ -427,6 +604,7 @@ const ActivityDetail = () => {
               </div>
 
               {/* Time of Day */}
+              {visibleEditMetrics.timeOfDay && (
               <div>
                 <label className="block text-gray-300 mb-1">Time of Day</label>
                 <select
@@ -441,6 +619,7 @@ const ActivityDetail = () => {
                   <option value="NIGHT">Night</option>
                 </select>
               </div>
+              )}
 
               {/* Start Date & Time */}
               <div>
@@ -460,6 +639,7 @@ const ActivityDetail = () => {
               </div>
 
               {/* Meal Timing */}
+              {visibleEditMetrics.mealTiming && (
               <div>
                 <label className="block text-gray-300 mb-1">Before/After Lunch</label>
                 <select
@@ -468,12 +648,14 @@ const ActivityDetail = () => {
                   className="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600"
                 >
                   <option value="">Select option</option>
-                  <option value="BEFORE_LUNCH">Before lunch</option>
-                  <option value="AFTER_LUNCH">After lunch</option>
+                  <option value="BEFORE_EATING">Before eating</option>
+                  <option value="AFTER_EATING">After eating</option>
                 </select>
               </div>
+              )}
 
               {/* Water Intake */}
+              {visibleEditMetrics.waterIntakeMl && (
               <div>
                 <label className="block text-gray-300 mb-1">Water Intake (ml)</label>
                 <input
@@ -484,8 +666,10 @@ const ActivityDetail = () => {
                   className="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600"
                 />
               </div>
+              )}
 
               {/* Heart Rate */}
+              {visibleEditMetrics.heartRateBpm && (
               <div>
                 <label className="block text-gray-300 mb-1">Heart Rate (BPM)</label>
                 <input
@@ -497,19 +681,132 @@ const ActivityDetail = () => {
                   className="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600"
                 />
               </div>
+              )}
 
-              {/* Distance */}
+              {/* Distance / Laps */}
+              {visibleEditMetrics.distance && (
               <div>
-                <label className="block text-gray-300 mb-1">Distance (km)</label>
+                <label className="block text-gray-300 mb-1">{getDistanceInputLabel(editData.type || activity.type)}</label>
                 <input
                   type="number"
                   min="0"
                   step="0.1"
                   value={editData.distance}
                   onChange={(e) => handleEditFieldChange('distance', e.target.value)}
+                  placeholder={getDistancePlaceholder(editData.type || activity.type)}
                   className="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600"
                 />
               </div>
+              )}
+
+              {visibleEditMetrics.strokeType && (
+              <div>
+                <label className="block text-gray-300 mb-1">Stroke Type</label>
+                <input
+                  type="text"
+                  value={editData.strokeType}
+                  onChange={(e) => handleEditFieldChange('strokeType', e.target.value)}
+                  placeholder="e.g., freestyle"
+                  className="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600"
+                />
+              </div>
+              )}
+
+              {visibleEditMetrics.avgSpeedKmh && (
+              <div>
+                <label className="block text-gray-300 mb-1">Avg Speed (km/h)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={editData.avgSpeedKmh}
+                  onChange={(e) => handleEditFieldChange('avgSpeedKmh', e.target.value)}
+                  className="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600"
+                />
+              </div>
+              )}
+
+              {visibleEditMetrics.elevationGainM && (
+              <div>
+                <label className="block text-gray-300 mb-1">Elevation Gain (m)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={editData.elevationGainM}
+                  onChange={(e) => handleEditFieldChange('elevationGainM', e.target.value)}
+                  className="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600"
+                />
+              </div>
+              )}
+
+              {visibleEditMetrics.sets && (
+              <div>
+                <label className="block text-gray-300 mb-1">Total Sets</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={editData.sets}
+                  onChange={(e) => handleEditFieldChange('sets', e.target.value)}
+                  className="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600"
+                />
+              </div>
+              )}
+
+              {visibleEditMetrics.reps && (
+              <div>
+                <label className="block text-gray-300 mb-1">Total Reps</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={editData.reps}
+                  onChange={(e) => handleEditFieldChange('reps', e.target.value)}
+                  className="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600"
+                />
+              </div>
+              )}
+
+              {visibleEditMetrics.weightKg && (
+              <div>
+                <label className="block text-gray-300 mb-1">Max/Working Weight (kg)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  value={editData.weightKg}
+                  onChange={(e) => handleEditFieldChange('weightKg', e.target.value)}
+                  className="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600"
+                />
+              </div>
+              )}
+
+              {visibleEditMetrics.sessionIntensity && (
+              <div>
+                <label className="block text-gray-300 mb-1">Session Intensity</label>
+                <select
+                  value={editData.sessionIntensity}
+                  onChange={(e) => handleEditFieldChange('sessionIntensity', e.target.value)}
+                  className="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600"
+                >
+                  <option value="">Select intensity</option>
+                  <option value="LOW">Low</option>
+                  <option value="MEDIUM">Medium</option>
+                  <option value="HIGH">High</option>
+                </select>
+              </div>
+              )}
+
+              {visibleEditMetrics.focusArea && (
+              <div>
+                <label className="block text-gray-300 mb-1">Focus Area</label>
+                <input
+                  type="text"
+                  value={editData.focusArea}
+                  onChange={(e) => handleEditFieldChange('focusArea', e.target.value)}
+                  placeholder="e.g., flexibility"
+                  className="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600"
+                />
+              </div>
+              )}
 
               <div className="flex gap-3 mt-4">
                 <button
