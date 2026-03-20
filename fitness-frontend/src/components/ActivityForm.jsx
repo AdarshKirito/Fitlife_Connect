@@ -98,6 +98,8 @@ const ActivityForm = ({ onActivityAdded }) => {
 
   const [errors, setErrors] = useState(createInitialErrors());
 
+  const [submitError, setSubmitError] = useState('');
+
   const handleAdditionalMetricChange = (field, value) => {
     setActivity(prev => ({
       ...prev,
@@ -140,7 +142,14 @@ const ActivityForm = ({ onActivityAdded }) => {
       }
       setActivity(createInitialActivity(getLocalDatetimeForInput()));
       setErrors(createInitialErrors());
+      setSubmitError('');
     } catch (error) {
+      const msg = error.response?.data?.message;
+      if (msg) {
+        setSubmitError(msg);
+      } else {
+        setSubmitError('Failed to save activity. Please try again.');
+      }
       console.error(error);
     }
   }
@@ -158,7 +167,8 @@ const ActivityForm = ({ onActivityAdded }) => {
   const handleDurationChange = (e) => {
     const value = e.target.value;
     setActivity({...activity, duration: value});
-    
+    setSubmitError('');
+
     if (value && value <= 0) {
       setErrors((prev) => ({...prev, duration: 'Duration must be greater than 0'}));
     } else if (value && value > 1440) {
@@ -187,6 +197,7 @@ const ActivityForm = ({ onActivityAdded }) => {
 
   const handleStartTimeChange = (e) => {
     const value = e.target.value;
+    setSubmitError('');
     // prevent selecting future times by clamping to now
     const max = getLocalDatetimeForInput();
     if (value > max) {
@@ -530,6 +541,13 @@ const ActivityForm = ({ onActivityAdded }) => {
         </div>
         )}
       </div>
+
+      {submitError && (
+        <div className="mb-4 flex items-start gap-3 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3">
+          <span className="mt-0.5 text-red-400 text-lg leading-none">⚠</span>
+          <p className="text-red-300 text-sm leading-snug">{submitError}</p>
+        </div>
+      )}
 
       <button 
         type="submit"

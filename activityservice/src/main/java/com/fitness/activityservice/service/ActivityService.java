@@ -6,9 +6,13 @@ import com.fitness.activityservice.dto.ActivityResponse;
 import com.fitness.activityservice.model.Activity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,6 +34,7 @@ public class ActivityService {
 
     public ActivityResponse trackActivity(ActivityRequest request) {
         validateUserOrThrow(request.getUserId());
+        checkForTimeOverlap(request.getUserId(), request.getStartTime(), request.getDuration(), null);
 
         Activity activity = buildActivity(request);
 
@@ -93,6 +98,40 @@ public class ActivityService {
         }
     }
 
+    private void checkForTimeOverlap(String userId, LocalDateTime newStart, Integer newDuration, String excludeActivityId) {
+        if (newStart == null || newDuration == null || newDuration <= 0) {
+            return;
+        }
+
+        LocalDateTime newEnd = newStart.plusMinutes(newDuration);
+        List<Activity> candidates = activityRepository.findByUserIdAndStartTimeBefore(userId, newEnd);
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("MMM d 'at' h:mm a");
+
+        for (Activity existing : candidates) {
+            if (excludeActivityId != null && excludeActivityId.equals(existing.getId())) {
+                continue;
+            }
+            if (existing.getStartTime() == null || existing.getDuration() == null) {
+                continue;
+            }
+            LocalDateTime existingEnd = existing.getStartTime().plusMinutes(existing.getDuration());
+            if (existingEnd.isAfter(newStart)) {
+                String typeName = existing.getType().name().charAt(0)
+                        + existing.getType().name().substring(1).toLowerCase().replace('_', ' ');
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        String.format(
+                                "You already have a %s session from %s to %s. " +
+                                "Please choose a different time or adjust the conflicting activity.",
+                                typeName,
+                                existing.getStartTime().format(fmt),
+                                existingEnd.format(fmt)
+                        )
+                );
+            }
+        }
+    }
+
 
     public List<ActivityResponse> getUserActivities(String userId) {
         List<Activity> activityList = activityRepository.findByUserId(userId);
@@ -126,6 +165,8 @@ public class ActivityService {
         existing.setCaloriesBurned(request.getCaloriesBurned());
         existing.setStartTime(request.getStartTime());
         existing.setAdditionalMetrics(request.getAdditionalMetrics());
+
+        checkForTimeOverlap(existing.getUserId(), existing.getStartTime(), existing.getDuration(), activityId);
 
         Activity updated = activityRepository.save(existing);
 
