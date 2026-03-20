@@ -1,43 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, TrendingUp, Zap, Shield, Target, Activity, Calendar, Users } from 'lucide-react';
+import { getUserRecommendation } from '../services/api';
 
-const CompleteRecommendation = ({ userId, token }) => {
+const CompleteRecommendation = ({ userId }) => {
   const [recommendation, setRecommendation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchRecommendation();
-  }, [userId]);
-
-  const fetchRecommendation = async () => {
+  const fetchRecommendation = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch(
-        `http://localhost:8080/api/recommendations/user/${userId}`,
-        {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Accept': 'application/json'
-          }
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch recommendation');
-      }
-
-      const data = await response.json();
-      setRecommendation(data);
+      const response = await getUserRecommendation(userId);
+      setRecommendation(response.data);
+      setError(null);
     } catch (err) {
-      setError(err.message);
+      if (err.response && err.response.status === 404) {
+        setRecommendation(null);
+        setError('No AI recommendations found yet. Add activity details and wait a moment for AI processing.');
+      } else {
+        setError(err.response?.data?.message || err.message || 'Failed to fetch recommendation');
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    fetchRecommendation();
+  }, [fetchRecommendation]);
 
   if (loading) {
     return (

@@ -17,22 +17,31 @@ const HomePage = ({ isAuthenticated, tokenData }) => {
   const navigate = useNavigate();
   const [activities, setActivities] = useState([]);
 
+  const fetchActivities = async () => {
+    try {
+      const response = await getActivities();
+      setActivities(response.data || []);
+    } catch (error) {
+      console.error("Failed to load activities for dashboard", error);
+    }
+  };
+
   useEffect(() => {
     if (!isAuthenticated) {
       return;
     }
 
-    const fetchActivities = async () => {
-      try {
-        const response = await getActivities();
-        setActivities(response.data || []);
-      } catch (error) {
-        console.error("Failed to load activities for dashboard", error);
-      }
-    };
-
     fetchActivities();
   }, [isAuthenticated]);
+
+  const handleActivityAdded = (createdActivity) => {
+    if (!createdActivity) {
+      fetchActivities();
+      return;
+    }
+
+    setActivities((prev) => [createdActivity, ...prev.filter((item) => item.id !== createdActivity.id)]);
+  };
 
   const stats = useMemo(() => {
     const totalActivities = activities.length;
@@ -131,11 +140,11 @@ const HomePage = ({ isAuthenticated, tokenData }) => {
         <section id="activity-form-section" className="rounded-2xl border border-gray-700 bg-gray-900/70 p-6 md:p-8 shadow-2xl">
           <h2 className="text-3xl font-extrabold text-white mb-2">Track New Activity</h2>
           <p className="text-gray-400 mb-6">The more accurate your data, the better your AI analysis and weekly plan.</p>
-          <ActivityForm onActivityAdded={() => window.location.reload()} />
+          <ActivityForm onActivityAdded={handleActivityAdded} />
         </section>
 
         <section className="rounded-2xl border border-gray-700 bg-gray-900/70 p-6 md:p-8 shadow-2xl">
-          <ActivityList limit={3} showSeeMore={true} />
+          <ActivityList limit={3} showSeeMore={true} activities={activities} />
         </section>
       </div>
     </div>
@@ -184,7 +193,6 @@ function App() {
             token ? (
               <CompleteRecommendation 
                 userId={tokenData?.sub}
-                token={token}
               />
             ) : <Navigate to="/" replace/>
           }/>

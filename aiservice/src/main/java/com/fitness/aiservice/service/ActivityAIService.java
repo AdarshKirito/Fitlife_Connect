@@ -29,8 +29,7 @@ public class ActivityAIService {
 
     private Recommendation processAIResponse(Activity activity, String aiResponse) {
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode rootNode = mapper.readTree(aiResponse);
+            JsonNode rootNode = objectMapper.readTree(aiResponse);
             JsonNode textNode = rootNode.path("choices")
               .get(0)
               .path("message")
@@ -47,7 +46,7 @@ public class ActivityAIService {
 
 //            log.info("RESPONSE FROM CLEANED AI {} ", jsonContent);
 
-            JsonNode analysisJson = mapper.readTree(jsonContent);
+            JsonNode analysisJson = objectMapper.readTree(jsonContent);
             JsonNode analysisNode = analysisJson.path("analysis");
             StringBuilder fullAnalysis = new StringBuilder();
             addAnalysisSection(fullAnalysis, analysisNode, "overall", "Overall:");
@@ -203,14 +202,7 @@ public class ActivityAIService {
             String aiResponse = openAIService.getRecommendations(prompt);
             log.info("USER-LEVEL RESPONSE FROM AI: {}", aiResponse);
 
-            // Use dummy activity just to reuse processAIResponse()
-            Activity dummy = new Activity();
-            dummy.setId(null);
-            dummy.setUserId(userId);
-            dummy.setType(ActivityType.OTHER);
-            dummy.setDuration(null);
-            dummy.setCaloriesBurned(null);
-            dummy.setAdditionalMetrics(Map.of("recommendationsCount", recs.size()));
+            Activity dummy = createSyntheticActivity(userId, recs.size());
 
             Recommendation combined = processAIResponse(dummy, aiResponse);
             combined.setType("USER_SUMMARY");   // mark it as a combined one
@@ -242,13 +234,7 @@ public class ActivityAIService {
                 String aiResponse = openAIService.getRecommendations(prompt);
                 log.info("WEEKLY-PLAN RESPONSE FROM AI: {}", aiResponse);
 
-                Activity dummy = new Activity();
-                dummy.setId(null);
-                dummy.setUserId(userId);
-                dummy.setType(ActivityType.OTHER);
-                dummy.setDuration(null);
-                dummy.setCaloriesBurned(null);
-                dummy.setAdditionalMetrics(Map.of("recommendationsCount", recs.size()));
+                Activity dummy = createSyntheticActivity(userId, recs.size());
 
                 Recommendation weeklyPlan = processAIResponse(dummy, aiResponse);
                 weeklyPlan.setType("WEEKLY_PLAN");
@@ -278,6 +264,17 @@ public class ActivityAIService {
                     .build();
               }
             }
+
+          private Activity createSyntheticActivity(String userId, int recommendationsCount) {
+            Activity activity = new Activity();
+            activity.setId(null);
+            activity.setUserId(userId);
+            activity.setType(ActivityType.OTHER);
+            activity.setDuration(null);
+            activity.setCaloriesBurned(null);
+            activity.setAdditionalMetrics(Map.of("recommendationsCount", recommendationsCount));
+            return activity;
+          }
 
     private String createPromptForUserFromRecommendations(String userId, String recsJsonArray) {
         return String.format("""

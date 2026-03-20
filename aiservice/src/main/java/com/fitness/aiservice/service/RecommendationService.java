@@ -1,5 +1,6 @@
 package com.fitness.aiservice.service;
 
+import com.fitness.aiservice.model.Activity;
 import com.fitness.aiservice.model.Recommendation;
 import com.fitness.aiservice.model.WeeklyPlan;
 import com.fitness.aiservice.respository.RecommendationRepository;
@@ -13,9 +14,11 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -25,9 +28,10 @@ public class RecommendationService {
     private final RecommendationRepository recommendationRepository;
     private final WeeklyPlanRepository weeklyPlanRepository;
     private final ActivityAIService activityAIService;
+    private final ActivityLookupService activityLookupService;
 
     public Recommendation getUserRecommendation(String userId) {
-        List<Recommendation> recs = recommendationRepository.findByUserId(userId);
+        List<Recommendation> recs = ensureRecommendationsForUser(userId);
 
         if (recs == null || recs.isEmpty()) {
             throw new ResponseStatusException(
@@ -48,7 +52,7 @@ public class RecommendationService {
     }
 
     public WeeklyPlan getWeeklyPlanRecommendation(String userId) {
-        List<Recommendation> recs = recommendationRepository.findByUserId(userId);
+        List<Recommendation> recs = ensureRecommendationsForUser(userId);
 
         if (recs == null || recs.isEmpty()) {
             throw new ResponseStatusException(
@@ -69,7 +73,7 @@ public class RecommendationService {
     }
 
     public WeeklyPlan regenerateWeeklyPlanRecommendation(String userId) {
-        List<Recommendation> recs = recommendationRepository.findByUserId(userId);
+        List<Recommendation> recs = ensureRecommendationsForUser(userId);
 
         if (recs == null || recs.isEmpty()) {
             throw new ResponseStatusException(
@@ -145,6 +149,35 @@ public class RecommendationService {
         dayCompletion.put(normalizedDay, completed);
         weeklyPlan.setDayCompletion(dayCompletion);
         return weeklyPlanRepository.save(weeklyPlan);
+    }
+
+    private List<Recommendation> ensureRecommendationsForUser(String userId) {
+        List<Recommendation> existingRecommendations = recommendationRepository.findByUserId(userId);
+        List<Activity> activities = activityLookupService.getUserActivities(userId);
+
+        if (activities == null || activities.isEmpty()) {
+            return existingRecommendations;
+        }
+
+        Set<String> existingActivityIds = new HashSet<>();
+        for (Recommendation recommendation : existingRecommendations) {
+            if (recommendation.getActivityId() != null && !recommendation.getActivityId().isBlank()) {
+                existingActivityIds.add(recommendation.getActivityId());
+            }
+        }
+
+        for (Activity activity : activities) {
+            if (activity.getId() == null || existingActivityIds.contains(activity.getId())) {
+                continue;
+            }
+
+            Recommendation generatedRecommendation = activityAIService.generateRecommendation(activity);
+            recommendationRepository.save(generatedRecommendation);
+            existingRecommendations.add(generatedRecommendation);
+            existingActivityIds.add(activity.getId());
+        }
+
+        return existingRecommendations;
     }
 
     private WeeklyPlan buildWeeklyPlan(

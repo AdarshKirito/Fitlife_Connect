@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router';
 import { getActivityDetail, deleteActivity, getActivityRecommendation, updateActivity } from '../services/api';
 import { ArrowLeft, Calendar, Clock, Flame, TrendingUp, AlertCircle, Lightbulb, ShieldCheck, Droplet } from 'lucide-react';
@@ -81,14 +81,8 @@ const ActivityDetail = () => {
 
   const { id } = useParams();
   const navigate = useNavigate();
-  const [activity, setActivity] = useState(null);
-  const [recommendation, setRecommendation] = useState(null);
-  const [loadingActivity, setLoadingActivity] = useState(true);
-  const [loadingRecommendation, setLoadingRecommendation] = useState(true);
-  const [recError, setRecError] = useState(null);
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({
+  const createEmptyEditData = () => ({
     type: '',
     duration: '',
     caloriesBurned: '',
@@ -107,6 +101,39 @@ const ActivityDetail = () => {
     focusArea: '',
     strokeType: ''
   });
+
+  const buildEditDataFromActivity = useCallback((currentActivity) => {
+    const metrics = currentActivity.additionalMetrics || {};
+
+    return {
+      type: currentActivity.type || '',
+      duration: currentActivity.duration ?? '',
+      caloriesBurned: currentActivity.caloriesBurned ?? '',
+      startTime: currentActivity.startTime ? formatForDatetimeLocal(currentActivity.startTime) : '',
+      timeOfDay: metrics.timeOfDay || '',
+      mealTiming: metrics.mealTiming || '',
+      waterIntakeMl: metrics.waterIntakeMl ?? '',
+      heartRateBpm: metrics.heartRateBpm ?? '',
+      distance: metrics.distance ?? '',
+      sets: metrics.sets ?? '',
+      reps: metrics.reps ?? '',
+      weightKg: metrics.weightKg ?? '',
+      avgSpeedKmh: metrics.avgSpeedKmh ?? '',
+      elevationGainM: metrics.elevationGainM ?? '',
+      sessionIntensity: metrics.sessionIntensity || '',
+      focusArea: metrics.focusArea || '',
+      strokeType: metrics.strokeType || ''
+    };
+  }, []);
+
+  const [activity, setActivity] = useState(null);
+  const [recommendation, setRecommendation] = useState(null);
+  const [loadingActivity, setLoadingActivity] = useState(true);
+  const [loadingRecommendation, setLoadingRecommendation] = useState(true);
+  const [recError, setRecError] = useState(null);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState(createEmptyEditData());
 
   const formatTimeOfDay = (value) => {
     switch (value) {
@@ -184,28 +211,9 @@ const ActivityDetail = () => {
   // When activity is loaded, prefill edit form
   useEffect(() => {
     if (activity) {
-      const metrics = activity.additionalMetrics || {};
-      setEditData({
-        type: activity.type || '',
-        duration: activity.duration ?? '',
-        caloriesBurned: activity.caloriesBurned ?? '',
-        startTime: activity.startTime ? formatForDatetimeLocal(activity.startTime) : '',
-        timeOfDay: metrics.timeOfDay || '',
-        mealTiming: metrics.mealTiming || '',
-        waterIntakeMl: metrics.waterIntakeMl ?? '',
-        heartRateBpm: metrics.heartRateBpm ?? '',
-        distance: metrics.distance ?? '',
-        sets: metrics.sets ?? '',
-        reps: metrics.reps ?? '',
-        weightKg: metrics.weightKg ?? '',
-        avgSpeedKmh: metrics.avgSpeedKmh ?? '',
-        elevationGainM: metrics.elevationGainM ?? '',
-        sessionIntensity: metrics.sessionIntensity || '',
-        focusArea: metrics.focusArea || '',
-        strokeType: metrics.strokeType || ''
-      });
+      setEditData(buildEditDataFromActivity(activity));
     }
-  }, [activity]);
+  }, [activity, buildEditDataFromActivity]);
 
   const formatForDatetimeLocal = (isoString) => {
     try {
@@ -214,7 +222,7 @@ const ActivityDetail = () => {
       const tzOffset = dt.getTimezoneOffset();
       const local = new Date(dt.getTime() - tzOffset * 60000);
       return local.toISOString().slice(0,16);
-    } catch (e) {
+    } catch {
       return '';
     }
   }

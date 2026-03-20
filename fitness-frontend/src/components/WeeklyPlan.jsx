@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CalendarCheck2, Shield, Target, Zap, CalendarDays, RefreshCw } from 'lucide-react';
 import {
@@ -57,16 +57,16 @@ const WeeklyPlan = ({ userId }) => {
     });
   };
 
-  const fetchWeeklyPlan = async () => {
+  const fetchWeeklyPlan = useCallback(async () => {
     const response = await getWeeklyRecommendation(userId);
     setPlan(response.data);
     return response.data;
-  };
+  }, [userId]);
 
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     const response = await getWeeklyPlanHistory(userId);
     setHistory(response.data || []);
-  };
+  }, [userId]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -89,7 +89,7 @@ const WeeklyPlan = ({ userId }) => {
     if (userId) {
       loadData();
     }
-  }, [userId]);
+  }, [userId, fetchWeeklyPlan, fetchHistory]);
 
   useEffect(() => {
     if (cooldownSeconds <= 0) {
@@ -156,7 +156,7 @@ const WeeklyPlan = ({ userId }) => {
       setPlan(response.data);
       setHistory((prev) => prev.map((item) => (item.id === response.data.id ? response.data : item)));
       setError(null);
-    } catch (err) {
+    } catch {
       setPlan(plan);
       setError('Failed to update day completion. Please try again.');
     } finally {

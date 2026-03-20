@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { addActivity } from '../services/api';
 
 const ActivityForm = ({ onActivityAdded }) => {
@@ -64,33 +64,39 @@ const ActivityForm = ({ onActivityAdded }) => {
   const getDistanceLabel = (type) => (type === 'SWIMMING' ? 'Laps' : 'Distance (km)');
   const getDistancePlaceholder = (type) => (type === 'SWIMMING' ? 'e.g., 20, 40' : 'e.g., 5, 10.5');
 
-  const [activity, setActivity] = useState({
+  const createEmptyMetrics = () => ({
+    timeOfDay: '',
+    mealTiming: '',
+    waterIntakeMl: '',
+    heartRateBpm: '',
+    distance: '',
+    sets: '',
+    reps: '',
+    weightKg: '',
+    avgSpeedKmh: '',
+    elevationGainM: '',
+    sessionIntensity: '',
+    focusArea: '',
+    strokeType: ''
+  });
+
+  const createInitialActivity = (startTime = null) => ({
     type: "RUNNING",
     duration: '',
     caloriesBurned: '',
     // startTime stored as a string matching input[type=datetime-local] value
-    startTime: null,
-    additionalMetrics: {
-      timeOfDay: '',
-      mealTiming: '',
-      waterIntakeMl: '',
-      heartRateBpm: '',
-      distance: '',
-      sets: '',
-      reps: '',
-      weightKg: '',
-      avgSpeedKmh: '',
-      elevationGainM: '',
-      sessionIntensity: '',
-      focusArea: '',
-      strokeType: ''
-    }
+    startTime,
+    additionalMetrics: createEmptyMetrics()
   });
 
-  const [errors, setErrors] = useState({
+  const createInitialErrors = () => ({
     duration: '',
     caloriesBurned: ''
   });
+
+  const [activity, setActivity] = useState(createInitialActivity());
+
+  const [errors, setErrors] = useState(createInitialErrors());
 
   const handleAdditionalMetricChange = (field, value) => {
     setActivity(prev => ({
@@ -128,33 +134,12 @@ const ActivityForm = ({ onActivityAdded }) => {
         additionalMetrics: buildPayloadMetrics(activity.additionalMetrics, activity.type)
       };
 
-      await addActivity(payload);
-      onActivityAdded();
-      setActivity({
-        type: "RUNNING",
-        duration: '',
-        caloriesBurned: '',
-        startTime: getLocalDatetimeForInput(),
-        additionalMetrics: {
-          timeOfDay: '',
-          mealTiming: '',
-          waterIntakeMl: '',
-          heartRateBpm: '',
-          distance: '',
-          sets: '',
-          reps: '',
-          weightKg: '',
-          avgSpeedKmh: '',
-          elevationGainM: '',
-          sessionIntensity: '',
-          focusArea: '',
-          strokeType: ''
-        }
-      });
-      setErrors({
-        duration: '',
-        caloriesBurned: ''
-      });
+      const response = await addActivity(payload);
+      if (onActivityAdded) {
+        onActivityAdded(response.data);
+      }
+      setActivity(createInitialActivity(getLocalDatetimeForInput()));
+      setErrors(createInitialErrors());
     } catch (error) {
       console.error(error);
     }
@@ -175,11 +160,11 @@ const ActivityForm = ({ onActivityAdded }) => {
     setActivity({...activity, duration: value});
     
     if (value && value <= 0) {
-      setErrors({...errors, duration: 'Duration must be greater than 0'});
+      setErrors((prev) => ({...prev, duration: 'Duration must be greater than 0'}));
     } else if (value && value > 1440) {
-      setErrors({...errors, duration: 'Duration cannot exceed 24 hours (1440 minutes)'});
+      setErrors((prev) => ({...prev, duration: 'Duration cannot exceed 24 hours (1440 minutes)'}));
     } else {
-      setErrors({...errors, duration: ''});
+      setErrors((prev) => ({...prev, duration: ''}));
     }
   }
 
@@ -193,7 +178,7 @@ const ActivityForm = ({ onActivityAdded }) => {
   }
 
   // set initial startTime to now on first render if not set
-  React.useEffect(() => {
+  useEffect(() => {
     if (!activity.startTime) {
       setActivity(prev => ({...prev, startTime: getLocalDatetimeForInput()}));
     }
@@ -216,11 +201,11 @@ const ActivityForm = ({ onActivityAdded }) => {
     setActivity({...activity, caloriesBurned: value});
     
     if (value && value <= 0) {
-      setErrors({...errors, caloriesBurned: 'Calories must be greater than 0'});
+      setErrors((prev) => ({...prev, caloriesBurned: 'Calories must be greater than 0'}));
     } else if (value && value > 10000) {
-      setErrors({...errors, caloriesBurned: 'Calories seem too high. Please check.'});
+      setErrors((prev) => ({...prev, caloriesBurned: 'Calories seem too high. Please check.'}));
     } else {
-      setErrors({...errors, caloriesBurned: ''});
+      setErrors((prev) => ({...prev, caloriesBurned: ''}));
     }
   }
 
