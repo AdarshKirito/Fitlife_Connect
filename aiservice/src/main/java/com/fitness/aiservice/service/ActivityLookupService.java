@@ -28,4 +28,13 @@ public class ActivityLookupService {
                 .blockOptional()
                 .orElse(List.of());
     }
+
+    public Activity getActivityById(String userId, String activityId) {
+        return webClient.get()
+                .uri("/api/activities/{id}", activityId)
+                .header("X-User-ID", userId)
+                .retrieve()
+                .bodyToMono(Activity.class)
+                .block();
+    }
 }

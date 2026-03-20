@@ -4,6 +4,7 @@ import com.fitness.activityservice.ActivityRepository;
 import com.fitness.activityservice.dto.ActivityRequest;
 import com.fitness.activityservice.dto.ActivityResponse;
 import com.fitness.activityservice.model.Activity;
+import com.fitness.activityservice.model.ActivityType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -13,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -49,7 +51,10 @@ public class ActivityService {
         boolean isValidUser = userValidationService.validateUser(userId);
 
         if (!isValidUser) {
-            throw new RuntimeException(INVALID_USER_MESSAGE + userId);
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "User account was not found for this session. Please log out and log in again."
+            );
         }
     }
 
@@ -116,8 +121,7 @@ public class ActivityService {
             }
             LocalDateTime existingEnd = existing.getStartTime().plusMinutes(existing.getDuration());
             if (existingEnd.isAfter(newStart)) {
-                String typeName = existing.getType().name().charAt(0)
-                        + existing.getType().name().substring(1).toLowerCase().replace('_', ' ');
+                String typeName = formatActivityType(existing.getType());
                 throw new ResponseStatusException(
                         HttpStatus.CONFLICT,
                         String.format(
@@ -132,12 +136,42 @@ public class ActivityService {
         }
     }
 
+    private String formatActivityType(ActivityType type) {
+        if (type == null) {
+            return "activity";
+        }
+
+        String value = type.name().toLowerCase().replace('_', ' ');
+        if (value.isBlank()) {
+            return "activity";
+        }
+
+        return Character.toUpperCase(value.charAt(0)) + value.substring(1);
+    }
+
 
     public List<ActivityResponse> getUserActivities(String userId) {
         List<Activity> activityList = activityRepository.findByUserId(userId);
+        activityList.sort(Comparator
+                .comparing(ActivityService::resolveActivitySortTime, Comparator.nullsLast(Comparator.naturalOrder()))
+                .reversed());
+
         return activityList.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    private static LocalDateTime resolveActivitySortTime(Activity activity) {
+        if (activity == null) {
+            return null;
+        }
+        if (activity.getStartTime() != null) {
+            return activity.getStartTime();
+        }
+        if (activity.getCreatedAt() != null) {
+            return activity.getCreatedAt();
+        }
+        return activity.getUpdatedAt();
     }
 
     public void deleteActivity(String activityId, String userId) {

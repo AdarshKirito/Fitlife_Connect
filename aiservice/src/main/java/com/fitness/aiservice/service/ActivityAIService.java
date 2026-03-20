@@ -143,6 +143,11 @@ public class ActivityAIService {
     }
 
     private String createPromptForActivity(Activity activity) {
+      Map<String, Object> metrics = activity.getAdditionalMetrics() != null
+        ? activity.getAdditionalMetrics()
+        : Collections.emptyMap();
+      String metricsSummary = buildMetricsSummary(activity.getType(), metrics);
+
         return String.format("""
         Analyze this fitness activity and provide detailed recommendations in the following EXACT JSON format:
         {
@@ -176,23 +181,80 @@ public class ActivityAIService {
         Duration: %d minutes
         Start Time: %s
         Calories Burned: %d
-        Heart Rate (BPM): %s
-        Distance (km): %s
-        Additional Metrics: %s
+        Activity-Specific Metrics:
+        %s
+        Raw Additional Metrics (JSON-like map): %s
         
         Provide detailed analysis focusing on performance, improvements, next workout suggestions, and safety guidelines.
-        Include analysis on heart rate zones if heart rate is provided and distance covered if available.
+        IMPORTANT METRIC RULES:
+        - SWIMMING `distance` is LAP COUNT, not kilometers.
+        - RUNNING/WALKING/CYCLING `distance` is in kilometers.
+        - WEIGHT_TRAINING uses sets/reps/weightKg and should not be treated as distance-based cardio.
+        - YOGA/STRETCHING should focus on sessionIntensity and focusArea, not pace/distance.
+        Include heart-rate zone comments only when heartRateBpm is present.
         Ensure the response follows the EXACT JSON format shown above.
         """,
                 activity.getType(),
                 activity.getDuration(),
                 activity.getStartTime(),
                 activity.getCaloriesBurned(),
-                activity.getAdditionalMetrics().get("heartRateBpm") != null ? activity.getAdditionalMetrics().get("heartRateBpm") : "Not recorded",
-                activity.getAdditionalMetrics().get("distance") != null ? activity.getAdditionalMetrics().get("distance") : "Not recorded",
-                activity.getAdditionalMetrics()
+            metricsSummary,
+            metrics
         );
     }
+
+      private String buildMetricsSummary(ActivityType type, Map<String, Object> metrics) {
+        StringBuilder sb = new StringBuilder();
+
+        addMetricLine(sb, "Time of day", metrics.get("timeOfDay"));
+        addMetricLine(sb, "Meal timing", metrics.get("mealTiming"));
+        addMetricLine(sb, "Water intake (ml)", metrics.get("waterIntakeMl"));
+
+        if (type == ActivityType.SWIMMING) {
+          addMetricLine(sb, "Heart rate (BPM)", metrics.get("heartRateBpm"));
+          addMetricLine(sb, "Laps", metrics.get("distance"));
+          addMetricLine(sb, "Stroke type", metrics.get("strokeType"));
+        } else if (type == ActivityType.RUNNING || type == ActivityType.WALKING) {
+          addMetricLine(sb, "Heart rate (BPM)", metrics.get("heartRateBpm"));
+          addMetricLine(sb, "Distance (km)", metrics.get("distance"));
+        } else if (type == ActivityType.CYCLING) {
+          addMetricLine(sb, "Heart rate (BPM)", metrics.get("heartRateBpm"));
+          addMetricLine(sb, "Distance (km)", metrics.get("distance"));
+          addMetricLine(sb, "Average speed (km/h)", metrics.get("avgSpeedKmh"));
+          addMetricLine(sb, "Elevation gain (m)", metrics.get("elevationGainM"));
+        } else if (type == ActivityType.WEIGHT_TRAINING) {
+          addMetricLine(sb, "Sets", metrics.get("sets"));
+          addMetricLine(sb, "Reps", metrics.get("reps"));
+          addMetricLine(sb, "Weight (kg)", metrics.get("weightKg"));
+          addMetricLine(sb, "Session intensity", metrics.get("sessionIntensity"));
+        } else if (type == ActivityType.HIIT || type == ActivityType.CARDIO) {
+          addMetricLine(sb, "Heart rate (BPM)", metrics.get("heartRateBpm"));
+          addMetricLine(sb, "Session intensity", metrics.get("sessionIntensity"));
+        } else if (type == ActivityType.YOGA || type == ActivityType.STRETCHING) {
+          addMetricLine(sb, "Session intensity", metrics.get("sessionIntensity"));
+          addMetricLine(sb, "Focus area", metrics.get("focusArea"));
+        } else {
+          addMetricLine(sb, "Heart rate (BPM)", metrics.get("heartRateBpm"));
+          addMetricLine(sb, "Distance", metrics.get("distance"));
+          addMetricLine(sb, "Session intensity", metrics.get("sessionIntensity"));
+        }
+
+        if (sb.length() == 0) {
+          return "- No additional metrics recorded";
+        }
+        return sb.toString();
+      }
+
+      private void addMetricLine(StringBuilder sb, String label, Object value) {
+        if (value == null) {
+          return;
+        }
+        String text = String.valueOf(value).trim();
+        if (text.isEmpty()) {
+          return;
+        }
+        sb.append("- ").append(label).append(": ").append(text).append("\n");
+      }
 
     public Recommendation generateUserCombinedRecommendation(String userId, List<Recommendation> recs) {
         try {

@@ -12,7 +12,7 @@ keycloak:
     server-url: http://localhost:8181
     realm: fitness-app
     client-id: fitlife-backend
-    client-secret: DMIwp8y7ZVtDDQ755rabBH7t8QhKf2HX
+    client-secret: NUG5w1ZhAk2FdoZq89TbruVNBoTnLAHU
 
 spring:
   security:

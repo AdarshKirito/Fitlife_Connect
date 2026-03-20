@@ -6,9 +6,11 @@ import com.fitness.aiservice.model.WeeklyPlan;
 import com.fitness.aiservice.respository.RecommendationRepository;
 import com.fitness.aiservice.respository.WeeklyPlanRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -20,6 +22,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RecommendationService {
@@ -40,15 +43,60 @@ public class RecommendationService {
             );
         }
 
-        return activityAIService.generateUserCombinedRecommendation(userId, recs);
+        return generateUserSummaryOrThrow(userId, recs);
     }
 
-    public Recommendation getActivityRecommendation(String activityId) {
-        return recommendationRepository.findByActivityId(activityId)
-                .orElseThrow(() -> new ResponseStatusException(
+    public Recommendation getActivityRecommendation(String activityId, String userId, boolean refresh) {
+        List<Recommendation> recommendations = recommendationRepository.findByActivityIdOrderByCreatedAtDesc(activityId);
+
+        if (!refresh && recommendations != null && !recommendations.isEmpty()) {
+            return recommendations.get(0);
+        }
+
+        if (userId == null || userId.isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "No recommendation found yet for this activity: " + activityId
+            );
+        }
+
+        try {
+            Activity activity = activityLookupService.getActivityById(userId, activityId);
+            if (activity == null) {
+                throw new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "No recommendation found yet for this activity: " + activityId
-                ));
+                );
+            }
+
+            Recommendation generated = activityAIService.generateRecommendation(activity);
+            if (recommendations != null && !recommendations.isEmpty()) {
+                Recommendation existing = recommendations.get(0);
+                existing.setRecommendation(generated.getRecommendation());
+                existing.setImprovements(generated.getImprovements());
+                existing.setSuggestions(generated.getSuggestions());
+                existing.setSafety(generated.getSafety());
+                existing.setCreatedAt(generated.getCreatedAt());
+                recommendationRepository.save(existing);
+                return existing;
+            }
+
+            recommendationRepository.save(generated);
+            return generated;
+        } catch (WebClientResponseException.NotFound ex) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Activity not found or not accessible for this user: " + activityId
+            );
+        } catch (ResponseStatusException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            log.error("Failed to generate recommendation for activity {}: {}", activityId, ex.getMessage(), ex);
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "AI recommendation service is temporarily unavailable. Please try again shortly."
+            );
+        }
     }
 
     public WeeklyPlan getWeeklyPlanRecommendation(String userId) {
@@ -66,7 +114,7 @@ public class RecommendationService {
         return weeklyPlanRepository
                 .findFirstByUserIdAndWeekStartDateOrderByCreatedAtDesc(userId, weekStartDate)
                 .orElseGet(() -> {
-                    Recommendation generated = activityAIService.generateWeeklyPlanRecommendation(userId, recs);
+                Recommendation generated = generateWeeklyPlanOrThrow(userId, recs);
                     WeeklyPlan newPlan = buildWeeklyPlan(userId, generated, weekStartDate, null);
                     return weeklyPlanRepository.save(newPlan);
                 });
@@ -97,14 +145,25 @@ public class RecommendationService {
         });
 
         LocalDate weekStartDate = currentWeekStartDate();
-        Map<String, Boolean> currentWeekCompletion = weeklyPlanRepository
-            .findFirstByUserIdAndWeekStartDateOrderByCreatedAtDesc(userId, weekStartDate)
-            .map(WeeklyPlan::getDayCompletion)
-            .orElse(null);
 
-        Recommendation regenerated = activityAIService.generateWeeklyPlanRecommendation(userId, recs);
-        WeeklyPlan newPlan = buildWeeklyPlan(userId, regenerated, weekStartDate, currentWeekCompletion);
-        return weeklyPlanRepository.save(newPlan);
+        // Reset day completion on regenerate — old checkmarks belonged to the previous plan
+        Recommendation regenerated = generateWeeklyPlanOrThrow(userId, recs);
+        return weeklyPlanRepository
+                .findFirstByUserIdAndWeekStartDateOrderByCreatedAtDesc(userId, weekStartDate)
+                .map(existing -> {
+                    existing.setType(regenerated.getType());
+                    existing.setRecommendation(regenerated.getRecommendation());
+                    existing.setImprovements(regenerated.getImprovements());
+                    existing.setSuggestions(regenerated.getSuggestions());
+                    existing.setSafety(regenerated.getSafety());
+                    existing.setDayCompletion(defaultDayCompletionMap());
+                    existing.setCreatedAt(LocalDateTime.now());
+                    return weeklyPlanRepository.save(existing);
+                })
+                .orElseGet(() -> {
+                    WeeklyPlan newPlan = buildWeeklyPlan(userId, regenerated, weekStartDate, null);
+                    return weeklyPlanRepository.save(newPlan);
+                });
     }
 
     public List<WeeklyPlan> getWeeklyPlanHistory(String userId) {
@@ -171,13 +230,39 @@ public class RecommendationService {
                 continue;
             }
 
-            Recommendation generatedRecommendation = activityAIService.generateRecommendation(activity);
-            recommendationRepository.save(generatedRecommendation);
-            existingRecommendations.add(generatedRecommendation);
-            existingActivityIds.add(activity.getId());
+            try {
+                Recommendation generatedRecommendation = activityAIService.generateRecommendation(activity);
+                recommendationRepository.save(generatedRecommendation);
+                existingRecommendations.add(generatedRecommendation);
+                existingActivityIds.add(activity.getId());
+            } catch (Exception ignored) {
+                // Keep existing recommendations usable even if AI generation for one activity fails.
+            }
         }
 
         return existingRecommendations;
+    }
+
+    private Recommendation generateUserSummaryOrThrow(String userId, List<Recommendation> recs) {
+        try {
+            return activityAIService.generateUserCombinedRecommendation(userId, recs);
+        } catch (Exception ex) {
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "AI recommendation service is temporarily unavailable. Please try again shortly."
+            );
+        }
+    }
+
+    private Recommendation generateWeeklyPlanOrThrow(String userId, List<Recommendation> recs) {
+        try {
+            return activityAIService.generateWeeklyPlanRecommendation(userId, recs);
+        } catch (Exception ex) {
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "AI weekly plan service is temporarily unavailable. Please try again shortly."
+            );
+        }
     }
 
     private WeeklyPlan buildWeeklyPlan(

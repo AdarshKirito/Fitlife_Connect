@@ -76,10 +76,13 @@ const WeeklyPlan = ({ userId }) => {
         await fetchHistory();
         setError(null);
       } catch (err) {
+        const message = err.response?.data?.message || err.response?.data?.error;
         if (err.response && err.response.status === 404) {
-          setError('Weekly plan is not ready yet. Complete a few activities first.');
+          setError(message || 'Weekly plan is not ready yet. Complete a few activities first.');
+        } else if (err.response && err.response.status === 503) {
+          setError(message || 'AI weekly plan service is temporarily unavailable. Please try again shortly.');
         } else {
-          setError('Failed to load your weekly plan. Please try again.');
+          setError(message || 'Failed to load your weekly plan. Please try again.');
         }
       } finally {
         setLoading(false);
@@ -103,9 +106,20 @@ const WeeklyPlan = ({ userId }) => {
     return () => clearInterval(intervalId);
   }, [cooldownSeconds]);
 
+  const hasAnyDayChecked = plan && plan.dayCompletion
+    ? Object.values(plan.dayCompletion).some(Boolean)
+    : false;
+
   const handleRegenerate = async () => {
     if (!userId || cooldownSeconds > 0 || regenerating) {
       return;
+    }
+
+    if (hasAnyDayChecked) {
+      const confirmed = window.confirm(
+        'Regenerating will create a completely new plan and reset all your day checkmarks for this week. Your progress tracking will be lost.\n\nAre you sure you want to continue?'
+      );
+      if (!confirmed) return;
     }
 
     try {
@@ -124,7 +138,7 @@ const WeeklyPlan = ({ userId }) => {
         }
         setError(String(message));
       } else {
-        setError('Failed to regenerate weekly plan. Please try again.');
+        setError(err.response?.data?.message || err.response?.data?.error || 'Failed to regenerate weekly plan. Please try again.');
       }
     } finally {
       setRegenerating(false);
@@ -220,7 +234,7 @@ const WeeklyPlan = ({ userId }) => {
                 </button>
               </div>
               <p className="text-gray-400 mt-3 text-sm">
-                Regenerate creates a fresh AI plan. Cooldown: 5 minutes between regenerations.
+                Regenerate creates a completely new AI plan and <span className="text-orange-400 font-medium">resets all day checkmarks</span> for this week. Cooldown: 5 minutes between regenerations.
               </p>
             </div>
 
@@ -230,7 +244,9 @@ const WeeklyPlan = ({ userId }) => {
                   <CalendarDays className="text-indigo-300" size={22} />
                   Weekly Adherence Tracker
                 </h2>
-                <p className="text-gray-300 mb-4">Mark each day as completed when you finish that day&apos;s plan.</p>
+                <p className="text-gray-300 mb-4">
+                  Tick each day after you complete <span className="text-cyan-300 font-medium">this plan&apos;s</span> workout for that day. Tracks how consistently you follow the current plan &mdash; checkmarks reset if you regenerate since it becomes a new plan.
+                </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {dayLabels.map((day) => {
                     const checked = !!plan.dayCompletion?.[day];

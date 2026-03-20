@@ -11,7 +11,7 @@ import java.util.Optional;
 public interface RecommendationRepository extends MongoRepository<Recommendation, String> {
     List<Recommendation> findByUserId(String userId);
 
-    Optional<Recommendation> findByActivityId(String activityId);
+    List<Recommendation> findByActivityIdOrderByCreatedAtDesc(String activityId);
 
     void deleteByActivityId(String activityId);
 }

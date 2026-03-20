@@ -33,7 +33,18 @@ const ActivityList = ({ limit, showSeeMore = false, activities: providedActiviti
     return activities;
   }, [activities, providedActivities, usingProvidedActivities]);
 
-  const displayedActivities = limit ? sourceActivities.slice(0, limit) : sourceActivities;
+  const getActivityDate = (activity) => {
+    const value = activity?.startTime || activity?.createdAt || activity?.updatedAt;
+    if (!value) return new Date(0);
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? new Date(0) : parsed;
+  };
+
+  const sortedActivities = useMemo(() => {
+    return [...(sourceActivities || [])].sort((a, b) => getActivityDate(b) - getActivityDate(a));
+  }, [sourceActivities]);
+
+  const displayedActivities = limit ? sortedActivities.slice(0, limit) : sortedActivities;
 
   const formatTimeOfDay = (value) => {
     switch (value) {
@@ -49,7 +60,7 @@ const ActivityList = ({ limit, showSeeMore = false, activities: providedActiviti
     <div className="mt-8">
       <h2 className="text-2xl font-bold text-white mb-6">Recent Activities</h2>
       
-      {sourceActivities.length === 0 ? (
+      {sortedActivities.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-400 text-lg">
             No activities yet. Add your first activity above!
@@ -129,13 +140,13 @@ const ActivityList = ({ limit, showSeeMore = false, activities: providedActiviti
             })}
           </div>
 
-          {showSeeMore && sourceActivities.length > limit && (
+          {showSeeMore && sortedActivities.length > limit && (
             <div className="flex justify-center mt-8">
               <button
                 onClick={() => navigate('/all-activities')}
                 className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-blue-500/50"
               >
-                See All Activities ({sourceActivities.length})
+                See All Activities ({sortedActivities.length})
               </button>
             </div>
           )}

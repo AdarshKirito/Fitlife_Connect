@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Menu, Search, X, Activity, TrendingUp, CalendarDays } from 'lucide-react'
 import { getActivities } from '../services/api'
@@ -7,10 +7,12 @@ import SignupModal from './SignupModal'
 const Navbar = ({ isAuthenticated, tokenData, onLogin, onLogout }) => {
   const [isOpen, setIsOpen] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
   const [isSignupOpen, setIsSignupOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState([])
   const [allActivities, setAllActivities] = useState([])
+  const profileMenuRef = useRef(null)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -18,6 +20,32 @@ const Navbar = ({ isAuthenticated, tokenData, onLogin, onLogout }) => {
       fetchAllActivities()
     }
   }, [isAuthenticated])
+
+  useEffect(() => {
+    if (!isProfileMenuOpen) {
+      return undefined
+    }
+
+    const handleOutsideClick = (event) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setIsProfileMenuOpen(false)
+      }
+    }
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setIsProfileMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleOutsideClick)
+    document.addEventListener('keydown', handleEscape)
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [isProfileMenuOpen])
 
   const fetchAllActivities = async () => {
     try {
@@ -171,17 +199,24 @@ const Navbar = ({ isAuthenticated, tokenData, onLogin, onLogout }) => {
                 </a>
               </div>
             ) : (
-              <div className='relative group'>
-                <div className='w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold cursor-pointer'>
+              <div className='relative' ref={profileMenuRef}>
+                <button
+                  type='button'
+                  onClick={() => setIsProfileMenuOpen((prev) => !prev)}
+                  className='w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold cursor-pointer border-none'
+                >
                   {tokenData?.email?.[0]?.toUpperCase() || 'U'}
-                </div>
-                <div className='absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none group-hover:pointer-events-auto'>
+                </button>
+                <div className={`absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg transition-all duration-200 ${
+                  isProfileMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
+                }`}>
                   <div className='p-4 border-b border-gray-200'>
                     <p className='text-sm font-medium text-gray-900 truncate'>{tokenData?.email || 'User'}</p>
                   </div>
                   <button
                     onClick={(e) => {
                       e.preventDefault();
+                      setIsProfileMenuOpen(false)
                       if (onLogout) onLogout();
                     }}
                     type="button"

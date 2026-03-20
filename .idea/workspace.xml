@@ -6,8 +6,22 @@
   <component name="ChangeListManager">
     <list default="true" id="cf92d4f1-ac47-4e04-8535-49288bd8ea87" name="Changes" comment="changes">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/activityservice/src/main/java/com/fitness/activityservice/controller/ActivityController.java" beforeDir="false" afterPath="$PROJECT_DIR$/activityservice/src/main/java/com/fitness/activityservice/controller/ActivityController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/activityservice/src/main/java/com/fitness/activityservice/service/ActivityService.java" beforeDir="false" afterPath="$PROJECT_DIR$/activityservice/src/main/java/com/fitness/activityservice/service/ActivityService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/aiservice/src/main/java/com/fitness/aiservice/controller/RecommendationController.java" beforeDir="false" afterPath="$PROJECT_DIR$/aiservice/src/main/java/com/fitness/aiservice/controller/RecommendationController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/aiservice/src/main/java/com/fitness/aiservice/respository/RecommendationRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/aiservice/src/main/java/com/fitness/aiservice/respository/RecommendationRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/aiservice/src/main/java/com/fitness/aiservice/service/ActivityAIService.java" beforeDir="false" afterPath="$PROJECT_DIR$/aiservice/src/main/java/com/fitness/aiservice/service/ActivityAIService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/aiservice/src/main/java/com/fitness/aiservice/service/ActivityLookupService.java" beforeDir="false" afterPath="$PROJECT_DIR$/aiservice/src/main/java/com/fitness/aiservice/service/ActivityLookupService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/aiservice/src/main/java/com/fitness/aiservice/service/ActivityMessageListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/aiservice/src/main/java/com/fitness/aiservice/service/ActivityMessageListener.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/aiservice/src/main/java/com/fitness/aiservice/service/RecommendationService.java" beforeDir="false" afterPath="$PROJECT_DIR$/aiservice/src/main/java/com/fitness/aiservice/service/RecommendationService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/configserver/src/main/resources/config/ai-service.yml" beforeDir="false" afterPath="$PROJECT_DIR$/configserver/src/main/resources/config/ai-service.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/configserver/src/main/resources/config/gateway-service.yml" beforeDir="false" afterPath="$PROJECT_DIR$/configserver/src/main/resources/config/gateway-service.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/fitness-frontend/src/components/ActivityDetail.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/fitness-frontend/src/components/ActivityDetail.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/fitness-frontend/src/components/ActivityForm.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/fitness-frontend/src/components/ActivityForm.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fitness-frontend/src/components/ActivityList.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/fitness-frontend/src/components/ActivityList.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fitness-frontend/src/components/Navbar.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/fitness-frontend/src/components/Navbar.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fitness-frontend/src/components/WeeklyPlan.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/fitness-frontend/src/components/WeeklyPlan.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/fitness-frontend/src/services/api.js" beforeDir="false" afterPath="$PROJECT_DIR$/fitness-frontend/src/services/api.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -81,17 +95,6 @@
         <option value="QuarkusRunConfigurationType" />
         <option value="SpringBootApplicationConfigurationType" />
       </set>
-    </option>
-    <option name="configurationStatuses">
-      <map>
-        <entry key="MavenRunConfiguration">
-          <value>
-            <map>
-              <entry key="activityservice" value="STOPPED" />
-            </map>
-          </value>
-        </entry>
-      </map>
     </option>
   </component>
   <component name="RunManager" selected="Application.GatewayApplication">
@@ -238,9 +241,9 @@
     <recent_temporary>
       <list>
         <item itemvalue="Application.GatewayApplication" />
-        <item itemvalue="Application.UserserviceApplication" />
-        <item itemvalue="Application.AiserviceApplication" />
         <item itemvalue="Application.ActivityserviceApplication" />
+        <item itemvalue="Application.AiserviceApplication" />
+        <item itemvalue="Application.UserserviceApplication" />
         <item itemvalue="Application.EurekaApplication" />
       </list>
     </recent_temporary>

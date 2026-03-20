@@ -7,14 +7,9 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-    const userId = localStorage.getItem('userId');
     const token = localStorage.getItem('token');
     if (token) {
         config.headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    if (userId) {
-        config.headers['X-User-ID'] = userId;
     }
 
     return config;
@@ -23,8 +18,8 @@ api.interceptors.request.use((config) => {
 export const getActivities = () => api.get('/activities');
 export const addActivity = (activity) => api.post('/activities', activity);
 export const getActivityDetail = (id) => api.get(`/activities/${id}`);
-export const getActivityRecommendation = (id) =>
-  api.get(`/recommendations/activity/${id}`);
+export const getActivityRecommendation = (id, refresh = false) =>
+    api.get(`/recommendations/activity/${id}`, { params: { refresh } });
 export const getUserRecommendation = (userId) =>
     api.get(`/recommendations/user/${userId}`);
 export const getWeeklyRecommendation = (userId) =>

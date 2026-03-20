@@ -144,7 +144,7 @@ const ActivityForm = ({ onActivityAdded }) => {
       setErrors(createInitialErrors());
       setSubmitError('');
     } catch (error) {
-      const msg = error.response?.data?.message;
+      const msg = error.response?.data?.message || error.response?.data?.error;
       if (msg) {
         setSubmitError(msg);
       } else {

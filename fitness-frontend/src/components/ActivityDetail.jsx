@@ -134,6 +134,7 @@ const ActivityDetail = () => {
 
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState(createEmptyEditData());
+  const [recommendationRefreshToken, setRecommendationRefreshToken] = useState(0);
 
   const formatTimeOfDay = (value) => {
     switch (value) {
@@ -157,9 +158,50 @@ const ActivityDetail = () => {
     }
   };
 
-  useEffect(() => {
-    let retryTimeoutId;
+  const formatMetricValue = (type, key, value) => {
+    if (value == null || value === '') return 'Not specified';
+    if (key === 'waterIntakeMl') return `${value} ml`;
+    if (key === 'heartRateBpm') return `${value} BPM`;
+    if (key === 'distance') return type === 'SWIMMING' ? `${value} laps` : `${value} km`;
+    if (key === 'avgSpeedKmh') return `${value} km/h`;
+    if (key === 'elevationGainM') return `${value} m`;
+    if (key === 'weightKg') return `${value} kg`;
+    if (key === 'timeOfDay') return formatTimeOfDay(value);
+    if (key === 'mealTiming') return formatMealTiming(value);
+    return String(value);
+  };
 
+  const fetchRecommendation = useCallback(async (attempt = 0, refresh = false) => {
+      try {
+        setLoadingRecommendation(true);
+        const response = await getActivityRecommendation(id, refresh); // /recommendations/activity/{id}
+        setRecommendation(response.data);
+        setRecError(null);
+      } catch (error) {
+        if (error.response && error.response.status === 404) {
+          const message = error.response?.data?.message || error.response?.data?.error || '';
+          const shouldRetry = message.includes('No recommendation found yet for this activity');
+          const maxAttempts = refresh ? 8 : 6;
+          if (shouldRetry && attempt < maxAttempts) {
+            setRecError('AI recommendation is being generated. Retrying...');
+            setTimeout(() => {
+              fetchRecommendation(attempt + 1, refresh);
+            }, 5000);
+            return;
+          }
+          setRecError(message || 'No AI recommendation generated yet for this activity.');
+        } else if (error.response && error.response.status === 503) {
+          setRecError(error.response?.data?.message || 'AI recommendation service is temporarily unavailable. Please try again shortly.');
+        } else {
+          console.error('Error fetching recommendation:', error);
+          setRecError(error.response?.data?.message || 'Failed to load AI recommendation.');
+        }
+      } finally {
+        setLoadingRecommendation(false);
+      }
+    }, [id]);
+
+  useEffect(() => {
     const fetchActivityDetail = async () => {
       try {
         setLoadingActivity(true);
@@ -172,41 +214,9 @@ const ActivityDetail = () => {
       }
     }
 
-    const fetchRecommendation = async (attempt = 0) => {
-      try {
-        setLoadingRecommendation(true);
-        const response = await getActivityRecommendation(id); // /recommendations/activity/{id}
-        setRecommendation(response.data);
-        setRecError(null);
-      } catch (error) {
-        if (error.response && error.response.status === 404) {
-          const maxAttempts = 6;
-          if (attempt < maxAttempts) {
-            setRecError('AI recommendation is being generated. Retrying...');
-            retryTimeoutId = setTimeout(() => {
-              fetchRecommendation(attempt + 1);
-            }, 5000);
-            return;
-          }
-          setRecError('No AI recommendation generated yet for this activity.');
-        } else {
-          console.error('Error fetching recommendation:', error);
-          setRecError('Failed to load AI recommendation.');
-        }
-      } finally {
-        setLoadingRecommendation(false);
-      }
-    };
-
     fetchActivityDetail();
-    fetchRecommendation();
-
-    return () => {
-      if (retryTimeoutId) {
-        clearTimeout(retryTimeoutId);
-      }
-    };
-  }, [id]);
+    fetchRecommendation(0, recommendationRefreshToken > 0);
+  }, [id, fetchRecommendation, recommendationRefreshToken]);
 
   // When activity is loaded, prefill edit form
   useEffect(() => {
@@ -261,21 +271,26 @@ const ActivityDetail = () => {
         additionalMetrics: buildPayloadMetrics(editData, editData.type)
       };
 
-      await updateActivity(id, updatedPayload);
+      const updateResponse = await updateActivity(id, updatedPayload);
 
       alert("Activity updated successfully. AI may regenerate the recommendation.");
 
       // Update local state so UI reflects changes
-      setActivity(prev => ({
-        ...prev,
-        type: editData.type,
-        duration: Number(editData.duration),
-        caloriesBurned: Number(editData.caloriesBurned),
-        startTime: updatedPayload.startTime,
-        additionalMetrics: updatedPayload.additionalMetrics
-      }));
+      if (updateResponse?.data) {
+        setActivity(updateResponse.data);
+      } else {
+        setActivity(prev => ({
+          ...prev,
+          type: editData.type,
+          duration: Number(editData.duration),
+          caloriesBurned: Number(editData.caloriesBurned),
+          startTime: updatedPayload.startTime,
+          additionalMetrics: updatedPayload.additionalMetrics
+        }));
+      }
 
       setIsEditing(false);
+      setRecommendationRefreshToken((prev) => prev + 1);
     } catch (error) {
       if (error.response) {
         console.error(
@@ -319,6 +334,9 @@ const ActivityDetail = () => {
   const metrics = activity.additionalMetrics || {};
   const visibleDetailMetrics = getVisibleMetrics(activity.type);
   const visibleEditMetrics = getVisibleMetrics(editData.type || activity.type);
+  const aiInputMetricKeys = Object.entries(visibleDetailMetrics)
+    .filter(([, isVisible]) => isVisible)
+    .map(([key]) => key);
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-6">
@@ -858,6 +876,25 @@ const ActivityDetail = () => {
 
         {!loadingRecommendation && recommendation && (
           <>
+            <div className="mb-8">
+              <div className="flex items-center gap-2 mb-3">
+                <TrendingUp className="text-cyan-400" size={20} />
+                <h3 className="text-xl font-bold text-cyan-400">AI Input Metrics Used</h3>
+              </div>
+              <div className="bg-cyan-500/10 rounded-lg p-5 border border-cyan-500/20">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {aiInputMetricKeys.map((key) => (
+                    <div key={key} className="bg-gray-800/70 rounded-md p-3 border border-gray-700">
+                      <p className="text-xs text-gray-400 mb-1">{getFieldCardLabel(activity.type, key)}</p>
+                      <p className="text-sm text-cyan-100 font-semibold">
+                        {formatMetricValue(activity.type, key, metrics[key])}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
             {/* Analysis Section */}
             <div className="mb-8">
               <div className="flex items-center gap-2 mb-3">
