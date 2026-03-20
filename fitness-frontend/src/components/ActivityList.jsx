@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router';
 import { getActivities } from '../services/api';
 import { Calendar, Clock, Flame, Droplet } from 'lucide-react';
 
-const ActivityList = ({ limit, showSeeMore = false }) => {
+const ActivityList = ({ limit, showSeeMore = false, activities: providedActivities }) => {
   const [activities, setActivities] = useState([]);
   const navigate = useNavigate();
+  const usingProvidedActivities = Array.isArray(providedActivities);
 
   const fetchActivities = async () => {
     try {
@@ -17,10 +18,22 @@ const ActivityList = ({ limit, showSeeMore = false }) => {
   }
 
   useEffect(() => {
-    fetchActivities();
-  }, []);
+    if (usingProvidedActivities) {
+      return;
+    }
 
-  const displayedActivities = limit ? activities.slice(0, limit) : activities;
+    fetchActivities();
+  }, [usingProvidedActivities]);
+
+  const sourceActivities = useMemo(() => {
+    if (usingProvidedActivities) {
+      return providedActivities;
+    }
+
+    return activities;
+  }, [activities, providedActivities, usingProvidedActivities]);
+
+  const displayedActivities = limit ? sourceActivities.slice(0, limit) : sourceActivities;
 
   const formatTimeOfDay = (value) => {
     switch (value) {
@@ -36,7 +49,7 @@ const ActivityList = ({ limit, showSeeMore = false }) => {
     <div className="mt-8">
       <h2 className="text-2xl font-bold text-white mb-6">Recent Activities</h2>
       
-      {activities.length === 0 ? (
+      {sourceActivities.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-400 text-lg">
             No activities yet. Add your first activity above!
@@ -116,13 +129,13 @@ const ActivityList = ({ limit, showSeeMore = false }) => {
             })}
           </div>
 
-          {showSeeMore && activities.length > limit && (
+          {showSeeMore && sourceActivities.length > limit && (
             <div className="flex justify-center mt-8">
               <button
                 onClick={() => navigate('/all-activities')}
                 className="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-lg transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-blue-500/50"
               >
-                See All Activities ({activities.length})
+                See All Activities ({sourceActivities.length})
               </button>
             </div>
           )}

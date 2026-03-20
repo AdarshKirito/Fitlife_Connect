@@ -25,6 +25,8 @@ export const addActivity = (activity) => api.post('/activities', activity);
 export const getActivityDetail = (id) => api.get(`/activities/${id}`);
 export const getActivityRecommendation = (id) =>
   api.get(`/recommendations/activity/${id}`);
+export const getUserRecommendation = (userId) =>
+    api.get(`/recommendations/user/${userId}`);
 export const getWeeklyRecommendation = (userId) =>
     api.get(`/recommendations/weekly/${userId}`);
 export const regenerateWeeklyRecommendation = (userId) =>

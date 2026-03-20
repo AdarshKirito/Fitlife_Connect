@@ -6,8 +6,10 @@ import com.fitness.activityservice.service.ActivityService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/activities")
@@ -54,5 +56,10 @@ public class ActivityController {
         return ResponseEntity.ok(activityService.updateActivity(id, request));
     }
 
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Map<String, String>> handleStatusException(ResponseStatusException ex) {
+        String message = ex.getReason() != null ? ex.getReason() : "Request failed";
+        return ResponseEntity.status(ex.getStatusCode()).body(Map.of("message", message));
+    }
 
 }
